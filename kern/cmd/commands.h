@@ -96,7 +96,4 @@ int command_sch_test(int number_of_arguments, char **arguments);
 //2023
 int command_tst(int number_of_arguments, char **arguments);
 
-int pirntAHMED(int number_of_arguments, char **arguments);
-int pirntOMAR(int number_of_arguments, char **arguments);
-
 #endif /* KERN_CMD_COMMANDS_H_ */
