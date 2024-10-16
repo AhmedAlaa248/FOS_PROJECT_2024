@@ -54,6 +54,7 @@ struct Command commands[] =
 		{"modbuff", "enable modified buffer", command_enable_modified_buffer, 0},
 		{"modbufflength?", "get modified buffer length", command_get_modified_buffer_length, 0},
 		{"Ahmed", "JustForTEST", pirntAHMED, 0},
+		{"Omar", "JustForTEST", pirntOMAR, 0},
 
 		//*****************************//
 		/* COMMANDS WITH ONE ARGUMENT */
@@ -167,6 +168,11 @@ int command_writeusermem(int number_of_arguments, char **arguments)
 
 int pirntAHMED(int number_of_arguments, char **arguments){
 	cprintf("HELLO AHMED");
+	return 0;
+}
+
+int pirntOMAR(int number_of_arguments, char **arguments){
+	cprintf("HELLO Omar");
 	return 0;
 }
 
