@@ -119,7 +119,7 @@ void initialize_dynamic_allocator(uint32 daStart, uint32 initSizeOfAllocatedSpac
 	*blkHeader=*blkFooter;
 	struct BlockElement* FirstBlock=(struct BlockElement*)(daStart+2*sizeof(int));
 	LIST_INSERT_HEAD(&freeBlocksList,FirstBlock);
-
+	cprintf("\n");
 }
 //==================================
 // [2] SET BLOCK HEADER & FOOTER:
