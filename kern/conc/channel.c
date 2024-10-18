@@ -64,10 +64,10 @@ void wakeup_all(struct Channel *chan)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("wakeup_all is not implemented yet");
 	//Your Code is Here...
-	struct env *process;
+	struct Env *process;
 	while(chan->queue.size!=0){
-        process=dequeue(chan->queue);
-		void sched_insert_ready0(process);
-			}
+		process=dequeue(&(chan->queue));
+		sched_insert_ready0(process);
+	}
 }
 
