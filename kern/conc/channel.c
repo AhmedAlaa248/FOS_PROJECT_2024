@@ -66,6 +66,6 @@ void wakeup_all(struct Channel *chan)
 	//Your Code is Here...
 	while(chan->queue.size!=0){
 	    	chan->queue.lh_first->env_status=1;
-	    	}
+	}
 }
 
