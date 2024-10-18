@@ -66,7 +66,7 @@ void wakeup_all(struct Channel *chan)
 	//Your Code is Here...
 	struct env *process;
 	while(chan->queue.size!=0){
-		process=dequeue(chan->queue);
+        process=dequeue(chan->queue);
 		void sched_insert_ready0(process);
 			}
 }
