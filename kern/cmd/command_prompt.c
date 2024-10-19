@@ -461,8 +461,36 @@ int process_command(int number_of_arguments, char** arguments)
 	{
 		if (strcmp(arguments[0], commands[i].name) == 0)
 		{
-			return i;
+			if ((number_of_arguments - 1 == commands[i].num_of_args)
+				|| (number_of_arguments > 1 && commands[i].num_of_args == -1))
+			{
+				return i;
+			}else
+			{
+				LIST_INSERT_TAIL(&foundCommands, &commands[i]);
+				return CMD_INV_NUM_ARGS;
+			}
 		}
 	}
+
+	/*for (int i = 0; i < NUM_OF_COMMANDS; i++){
+		int foundChars = 0;
+		int sizeOfArgumentName = strlen(arguments[0]);
+		for (int j = 0; j < sizeOfArgumentName; j++){
+			if(strfind(commands[i].name,arguments[0][j]))
+			{
+				foundChars++;
+			}
+		}
+
+		if (sizeOfArgumentName == foundChars){
+			LIST_INSERT_TAIL(&foundCommands, &commands[i]);
+			if(i != NUM_OF_COMMANDS -2)
+			{
+				return CMD_MATCHED;
+			}
+		}
+	}
+	*/
 	return CMD_INVALID;
 }
