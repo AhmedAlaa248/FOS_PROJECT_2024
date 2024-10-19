@@ -53,7 +53,7 @@ struct Command commands[] =
 		{"nomodbuff", "disable modified buffer", command_disable_modified_buffer, 0},
 		{"modbuff", "enable modified buffer", command_enable_modified_buffer, 0},
 		{"modbufflength?", "get modified buffer length", command_get_modified_buffer_length, 0},
-		{"AHmed", "get modified buffer length", command_get_modified_buffer_length, 0},
+		{"Ahmed", "Just for test", AhmedTest, 0},
 
 		//*****************************//
 		/* COMMANDS WITH ONE ARGUMENT */
@@ -859,4 +859,8 @@ int command_get_modified_buffer_length(int number_of_arguments, char **arguments
 int command_tst(int number_of_arguments, char **arguments)
 {
 	return tst_handler(number_of_arguments, arguments);
+}
+
+int AhmedTest(int number_of_arguments, char **arguments){
+	return 0;
 }

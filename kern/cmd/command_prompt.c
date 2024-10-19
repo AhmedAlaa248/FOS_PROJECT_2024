@@ -456,7 +456,8 @@ int execute_command(char *command_string)
 int process_command(int number_of_arguments, char** arguments)
 {
 	//TODO: [PROJECT'24.MS1 - #01] [1] PLAY WITH CODE! - process_command
-
+	int iterationsss = 0;
+	bool foundSimilarCommand = 0;
 	for (int i = 0; i < NUM_OF_COMMANDS; i++)
 	{
 		if (strcmp(arguments[0], commands[i].name) == 0)
@@ -470,27 +471,28 @@ int process_command(int number_of_arguments, char** arguments)
 				LIST_INSERT_TAIL(&foundCommands, &commands[i]);
 				return CMD_INV_NUM_ARGS;
 			}
-		}
-	}
-
-	/*for (int i = 0; i < NUM_OF_COMMANDS; i++){
-		int foundChars = 0;
-		int sizeOfArgumentName = strlen(arguments[0]);
-		for (int j = 0; j < sizeOfArgumentName; j++){
-			if(strfind(commands[i].name,arguments[0][j]))
-			{
-				foundChars++;
+		}else{
+			int foundChars = 0;
+			int sizeOfArgumentName = strlen(arguments[0]);
+			for (int j = 0; j < sizeOfArgumentName; j++){
+				if(*strfind(commands[i].name,arguments[0][j]) != '\0')
+				{
+					foundChars++;
+				}
 			}
-		}
 
-		if (sizeOfArgumentName == foundChars){
-			LIST_INSERT_TAIL(&foundCommands, &commands[i]);
-			if(i != NUM_OF_COMMANDS -2)
+			if (sizeOfArgumentName == foundChars){
+				foundSimilarCommand = 1;
+				cprintf("%s \n", commands[i].name);
+				LIST_INSERT_TAIL(&foundCommands, &commands[i]);
+			}
+
+			if(foundSimilarCommand && i == NUM_OF_COMMANDS - 1)
 			{
 				return CMD_MATCHED;
 			}
 		}
 	}
-	*/
+
 	return CMD_INVALID;
 }
