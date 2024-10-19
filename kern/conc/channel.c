@@ -64,8 +64,10 @@ void wakeup_all(struct Channel *chan)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("wakeup_all is not implemented yet");
 	//Your Code is Here...
+	struct Env *process;
 	while(chan->queue.size!=0){
-	    	chan->queue.lh_first->env_status=1;
+		process=dequeue(&(chan->queue));
+		sched_insert_ready0(process);
 	}
 }
 

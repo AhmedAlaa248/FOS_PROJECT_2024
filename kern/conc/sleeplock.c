@@ -43,9 +43,17 @@ void release_sleeplock(struct sleeplock *lk)
 {
 	//TODO: [PROJECT'24.MS1 - #14] [4] LOCKS - release_sleeplock
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("release_sleeplock is not implemented yet");
+	//panic("release_sleeplock is not implemented yet");
 	//Your Code is Here...
+	struct spinlock gaurd;
+	struct Channel *chann=&(lk->chan);
 
+	acquire_spinlock(&gaurd);
+	if (chann->queue.size!=0){
+		wakeup_all(chann);
+	}
+	lk->locked=0;
+    release_spinlock(&gaurd);
 }
 
 

@@ -456,13 +456,43 @@ int execute_command(char *command_string)
 int process_command(int number_of_arguments, char** arguments)
 {
 	//TODO: [PROJECT'24.MS1 - #01] [1] PLAY WITH CODE! - process_command
-
+	int iterationsss = 0;
+	bool foundSimilarCommand = 0;
 	for (int i = 0; i < NUM_OF_COMMANDS; i++)
 	{
 		if (strcmp(arguments[0], commands[i].name) == 0)
 		{
-			return i;
+			if ((number_of_arguments - 1 == commands[i].num_of_args)
+				|| (number_of_arguments > 1 && commands[i].num_of_args == -1))
+			{
+				return i;
+			}else
+			{
+				LIST_INSERT_TAIL(&foundCommands, &commands[i]);
+				return CMD_INV_NUM_ARGS;
+			}
+		}else{
+			int foundChars = 0;
+			int sizeOfArgumentName = strlen(arguments[0]);
+			for (int j = 0; j < sizeOfArgumentName; j++){
+				if(*strfind(commands[i].name,arguments[0][j]) != '\0')
+				{
+					foundChars++;
+				}
+			}
+
+			if (sizeOfArgumentName == foundChars){
+				foundSimilarCommand = 1;
+				cprintf("%s \n", commands[i].name);
+				LIST_INSERT_TAIL(&foundCommands, &commands[i]);
+			}
+
+			if(foundSimilarCommand && i == NUM_OF_COMMANDS - 1)
+			{
+				return CMD_MATCHED;
+			}
 		}
 	}
+
 	return CMD_INVALID;
 }
