@@ -130,9 +130,11 @@ void set_block_data(void* va, uint32 totalSize, bool isAllocated)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("set_block_data is not implemented yet");
 	//Your Code is Here...
-	uint32 sizeHeader = totalSize/2;
-	uint32 sizeFooter = totalSize/2;
-	uint32* header = (uint32*)va-1;
+
+	/*
+	uint32 sizeHeader = totalSize;
+	uint32 sizeFooter = totalSize;
+	uint32* header = (uint32*)(va-sizeof(int));
 	uint32 headerValue = (isAllocated ? 1 : 0) | (sizeHeader & ~0x1);
 	*header = headerValue;
 	uint32* footer = (uint32*)(va+totalSize-8);
@@ -140,7 +142,23 @@ void set_block_data(void* va, uint32 totalSize, bool isAllocated)
 	*footer = footerValue;
 	bool result = is_free_block(va);
 	cprintf("Is the block free?: %d\n",result);
+	*/
+	uint32* header = (uint32*)(va-sizeof(int));//points to header
+	*header=totalSize; // set header with size value
+	uint32* footer = (uint32*)(va+totalSize-(2*sizeof(int)));//points to footer
+	*footer=totalSize; // set footer with size value
 
+	if(isAllocated)
+	{
+		*header |= 0x1;
+		*footer |= 0x1;
+	}
+
+	else
+	{
+		*header &= ~0x1;
+		*footer &= ~0x1;
+	}
 
 }
 
@@ -170,8 +188,60 @@ void *alloc_block_FF(uint32 size)
 
 	//TODO: [PROJECT'24.MS1 - #06] [3] DYNAMIC ALLOCATOR - alloc_block_FF
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("alloc_block_FF is not implemented yet");
+	//panic("alloc_block_FF is not implemented yet");
 	//Your Code is Here...
+
+
+
+	if(size<8||size==0) // it is not possible
+		return NULL;
+
+	uint32 total_size=size+8; // footer+header+needed size
+    struct BlockElement *ptr;
+    void *temp;
+
+	LIST_FOREACH(ptr,&freeBlocksList)
+	{
+		uint32 x = get_block_size(ptr);
+		if(x>=total_size) //founded a suitable block
+		{
+			break;
+		}
+	}
+
+
+
+	if(ptr==NULL) // if no block is free in the list , or no suitable free block
+	{
+			return NULL;
+	}
+
+
+	uint32 size_of_founded_free_block=get_block_size(ptr);
+	uint32 size_of_new_freeblock=size_of_founded_free_block-total_size; //rest of free block
+
+	if(size_of_new_freeblock>=16) // no internal fragmentation
+	{
+	  set_block_data(ptr,total_size,1); // setting the data for the allocated block
+
+	temp = (char*)ptr+total_size; //to create a new header for the rest free block;
+
+    set_block_data(temp,size_of_new_freeblock,0);
+
+	struct BlockElement* blockelement=(struct BlockElement*)(temp);
+
+	 // to keep free list sorted
+	LIST_INSERT_AFTER(&freeBlocksList,ptr,blockelement);
+	LIST_REMOVE(&freeBlocksList,ptr);
+	}
+
+	else
+	{
+		set_block_data(ptr,size_of_founded_free_block,1);
+		LIST_REMOVE(&freeBlocksList,ptr);
+	}
+
+return (void*) ptr;
 
 }
 //=========================================
