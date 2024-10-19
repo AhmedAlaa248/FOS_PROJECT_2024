@@ -131,18 +131,6 @@ void set_block_data(void* va, uint32 totalSize, bool isAllocated)
 	//panic("set_block_data is not implemented yet");
 	//Your Code is Here...
 
-	/*
-	uint32 sizeHeader = totalSize;
-	uint32 sizeFooter = totalSize;
-	uint32* header = (uint32*)(va-sizeof(int));
-	uint32 headerValue = (isAllocated ? 1 : 0) | (sizeHeader & ~0x1);
-	*header = headerValue;
-	uint32* footer = (uint32*)(va+totalSize-8);
-	uint32 footerValue = (isAllocated ? 1 : 0) | (sizeFooter & ~0x1);
-	*footer = footerValue;
-	bool result = is_free_block(va);
-	cprintf("Is the block free?: %d\n",result);
-	*/
 	uint32* header = (uint32*)(va-sizeof(int));//points to header
 	*header=totalSize; // set header with size value
 	uint32* footer = (uint32*)(va+totalSize-(2*sizeof(int)));//points to footer
@@ -222,9 +210,9 @@ void *alloc_block_FF(uint32 size)
 
 	if(size_of_new_freeblock>=16) // no internal fragmentation
 	{
-	  set_block_data(ptr,total_size,1); // setting the data for the allocated block
+    set_block_data(ptr,total_size,1); // setting the data for the allocated block
 
-	temp = (char*)ptr+total_size; //to create a new header for the rest free block;
+	temp = (char*)ptr+total_size;
 
     set_block_data(temp,size_of_new_freeblock,0);
 
