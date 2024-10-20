@@ -34,8 +34,21 @@ void acquire_sleeplock(struct sleeplock *lk)
 {
 	//TODO: [PROJECT'24.MS1 - #13] [4] LOCKS - acquire_sleeplock
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("acquire_sleeplock is not implemented yet");
+	//panic("acquire_sleeplock is not implemented yet");
 	//Your Code is Here...
+
+	acquire_spinlock(&(lk->lk));
+	while(lk->locked){
+		//TODO: check if putting thread on wait queue like this is right or not;
+		//This is not done:: GENERAL NOTE: make sure to protect any process queue using the suitable lock
+
+		struct Env *currentProcess =get_cpu_proc();
+		enqueue(&(lk->chan.queue),currentProcess);
+		sleep(&(lk->chan), &lk->lk);
+	}
+
+	lk->locked = 1;
+	release_spinlock(&(lk->lk));
 
 }
 

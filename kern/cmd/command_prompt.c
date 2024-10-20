@@ -472,7 +472,12 @@ int process_command(int number_of_arguments, char** arguments)
 				return CMD_INV_NUM_ARGS;
 			}
 		}else{
-			int foundChars = 0;
+
+		}
+	}
+
+	for (int i = 0; i < NUM_OF_COMMANDS; i++){
+		int foundChars = 0;
 			int sizeOfArgumentName = strlen(arguments[0]);
 			for (int j = 0; j < sizeOfArgumentName; j++){
 				if(*strfind(commands[i].name,arguments[0][j]) != '\0')
@@ -483,7 +488,7 @@ int process_command(int number_of_arguments, char** arguments)
 
 			if (sizeOfArgumentName == foundChars){
 				foundSimilarCommand = 1;
-				cprintf("%s \n", commands[i].name);
+				//cprintf("%s \n", commands[i].name);
 				LIST_INSERT_TAIL(&foundCommands, &commands[i]);
 			}
 
@@ -491,7 +496,6 @@ int process_command(int number_of_arguments, char** arguments)
 			{
 				return CMD_MATCHED;
 			}
-		}
 	}
 
 	return CMD_INVALID;
