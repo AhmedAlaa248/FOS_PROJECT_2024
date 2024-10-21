@@ -32,13 +32,20 @@ void sleep(struct Channel *chan, struct spinlock* lk)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//	panic("sleep is not implemented yet");
 	//Your Code is Here...
-	acquire_spinlock(lk);
+
 	struct Env *ElCurrentProc =get_cpu_proc();
-	enqueue(&(chan->queue),ElCurrentProc);
+
 	ElCurrentProc->channel=chan;
-	ElCurrentProc->env_status=ENV_BLOCKED;
 	release_spinlock(lk);
-	sched();
+	ElCurrentProc->env_status=ENV_BLOCKED;
+
+	acquire_spinlock(&ProcessQueues.qlock);
+	{
+		enqueue(&(chan->queue),ElCurrentProc);
+		sched();
+	}
+	release_spinlock(&ProcessQueues.qlock);
+
 	acquire_spinlock(lk);
 
 }
@@ -56,12 +63,14 @@ void wakeup_one(struct Channel *chan)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//	panic("wakeup_one is not implemented yet");
 	//Your Code is Here...
-    struct Env *ProcessWaked = dequeue(&(chan->queue));
+	struct Env *ProcessWaked;
 
-
-
-
-    sched_insert_ready0(ProcessWaked);
+	acquire_spinlock(&ProcessQueues.qlock);
+	{
+		ProcessWaked = dequeue(&(chan->queue));
+		sched_insert_ready0(ProcessWaked);
+	}
+	release_spinlock(&ProcessQueues.qlock);
 }
 
 //====================================================
@@ -80,8 +89,12 @@ void wakeup_all(struct Channel *chan)
 	//Your Code is Here...
 	struct Env *process;
 	while(chan->queue.size!=0){
-		process=dequeue(&(chan->queue));
-		sched_insert_ready0(process);
+		acquire_spinlock(&ProcessQueues.qlock);
+		{
+			process=dequeue(&(chan->queue));
+			sched_insert_ready0(process);
+		}
+		release_spinlock(&ProcessQueues.qlock);
 	}
 }
 
