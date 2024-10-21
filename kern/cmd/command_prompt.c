@@ -456,6 +456,13 @@ int execute_command(char *command_string)
 int process_command(int number_of_arguments, char** arguments)
 {
 	//TODO: [PROJECT'24.MS1 - #01] [1] PLAY WITH CODE! - process_command
+
+	struct Command *command;
+	LIST_FOREACH(command, &(foundCommands))
+	{
+		LIST_REMOVE(&foundCommands, command);
+	}
+
 	int iterationsss = 0;
 	bool foundSimilarCommand = 0;
 	for (int i = 0; i < NUM_OF_COMMANDS; i++)
