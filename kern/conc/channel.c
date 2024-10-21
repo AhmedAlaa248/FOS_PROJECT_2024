@@ -64,13 +64,17 @@ void wakeup_one(struct Channel *chan)
 	//	panic("wakeup_one is not implemented yet");
 	//Your Code is Here...
 	struct Env *ProcessWaked;
-
+	if(chan->queue.size!=0){
 	acquire_spinlock(&ProcessQueues.qlock);
 	{
+
 		ProcessWaked = dequeue(&(chan->queue));
 		sched_insert_ready0(ProcessWaked);
+
 	}
+
 	release_spinlock(&ProcessQueues.qlock);
+	}8
 }
 
 //====================================================
