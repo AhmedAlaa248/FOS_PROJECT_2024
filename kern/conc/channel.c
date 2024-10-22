@@ -65,16 +65,15 @@ void wakeup_one(struct Channel *chan)
 	//Your Code is Here...
 	struct Env *ProcessWaked;
 	if(chan->queue.size!=0){
-	acquire_spinlock(&ProcessQueues.qlock);
-	{
+		acquire_spinlock(&ProcessQueues.qlock);
+		{
 
-		ProcessWaked = dequeue(&(chan->queue));
-		sched_insert_ready0(ProcessWaked);
+			ProcessWaked = dequeue(&(chan->queue));
+			sched_insert_ready0(ProcessWaked);
 
+		}
+		release_spinlock(&ProcessQueues.qlock);
 	}
-
-	release_spinlock(&ProcessQueues.qlock);
-	}8
 }
 
 //====================================================
