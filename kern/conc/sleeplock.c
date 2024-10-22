@@ -1,5 +1,6 @@
 // Sleeping locks
 
+#include "../cpu/sched.h"
 #include "inc/types.h"
 #include "inc/x86.h"
 #include "inc/memlayout.h"
@@ -43,7 +44,12 @@ void acquire_sleeplock(struct sleeplock *lk)
 		//This is not done:: GENERAL NOTE: make sure to protect any process queue using the suitable lock
 
 		struct Env *currentProcess =get_cpu_proc();
-		enqueue(&(lk->chan.queue),currentProcess);
+
+		acquire_spinlock(&ProcessQueues.qlock);
+		{
+			enqueue(&(lk->chan.queue),currentProcess);
+		}
+		release_spinlock(&ProcessQueues.qlock);
 		sleep(&(lk->chan), &lk->lk);
 	}
 
