@@ -33,9 +33,8 @@ void sleep(struct Channel *chan, struct spinlock* lk)
 	//	panic("sleep is not implemented yet");
 	//Your Code is Here...
 
-	struct Env *ElCurrentProc =get_cpu_proc();
+	struct Env *ElCurrentProc = get_cpu_proc();
 
-	ElCurrentProc->channel=chan;
 	release_spinlock(lk);
 	ElCurrentProc->env_status=ENV_BLOCKED;
 
@@ -63,17 +62,16 @@ void wakeup_one(struct Channel *chan)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//	panic("wakeup_one is not implemented yet");
 	//Your Code is Here...
-	struct Env *ProcessWaked;
-	if(chan->queue.size!=0){
-		acquire_spinlock(&ProcessQueues.qlock);
-		{
 
+	struct Env *ProcessWaked;
+	acquire_spinlock(&ProcessQueues.qlock);
+	{
+		if(chan->queue.size!=0){
 			ProcessWaked = dequeue(&(chan->queue));
 			sched_insert_ready0(ProcessWaked);
-
 		}
-		release_spinlock(&ProcessQueues.qlock);
 	}
+	release_spinlock(&ProcessQueues.qlock);
 }
 
 //====================================================
@@ -90,7 +88,9 @@ void wakeup_all(struct Channel *chan)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("wakeup_all is not implemented yet");
 	//Your Code is Here...
+
 	struct Env *process;
+
 	while(chan->queue.size!=0){
 		acquire_spinlock(&ProcessQueues.qlock);
 		{

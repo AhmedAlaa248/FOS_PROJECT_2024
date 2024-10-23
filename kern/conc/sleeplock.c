@@ -39,19 +39,11 @@ void acquire_sleeplock(struct sleeplock *lk)
 
 	acquire_spinlock(&(lk->lk));
 	while(lk->locked){
-		//TODO: check if putting thread on wait queue like this is right or not;
-		//This is not done:: GENERAL NOTE: make sure to protect any process queue using the suitable lock
-
-		struct Env *currentProcess =get_cpu_proc();
-
-		enqueue(&(lk->chan.queue),currentProcess);
-
 		sleep(&(lk->chan), &lk->lk);
 	}
 
 	lk->locked = 1;
 	release_spinlock(&(lk->lk));
-
 }
 
 void release_sleeplock(struct sleeplock *lk)
