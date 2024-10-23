@@ -251,8 +251,81 @@ void free_block(void *va)
 {
 	//TODO: [PROJECT'24.MS1 - #07] [3] DYNAMIC ALLOCATOR - free_block
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("free_block is not implemented yet");
+	//panic("free_block is not implemented yet");
 	//Your Code is Here...
+
+	if(va==NULL)
+		return;
+
+	//setting the free block with 0 flag
+	uint32 size_free_block=get_block_size(va);
+
+	//Before Block
+	void*temp1 = (char*)va - (2*sizeof(int)); //points to footer
+	uint32 size_befor_block =(*(uint32*)temp1) & ~(0X1);
+	temp1 = (char*)temp1 - size_befor_block+8;
+	int8 res1 = is_free_block(temp1);
+
+	//After BLock
+	void* temp2 = (char*)va + size_free_block;
+	uint32 size_after_block = get_block_size(temp2);
+	int8 res2 = is_free_block(temp2);
+
+	set_block_data(va,size_free_block,0);
+
+	//First Case if both are allocated
+	if(res1==0&&res2==0)
+	{
+		struct BlockElement *ptr;
+		struct BlockElement* blockelement=(struct BlockElement*)(va);
+
+		LIST_FOREACH(ptr,&freeBlocksList)
+		{
+			if(ptr>blockelement)
+				break;
+		}
+
+		if(ptr==NULL)
+		{
+			//THIS IS EDITED
+			LIST_INSERT_TAIL(&freeBlocksList,blockelement);
+		}
+		else
+		{
+			//THIS IS EDITED
+			LIST_INSERT_BEFORE(&freeBlocksList,ptr,blockelement);
+		}
+	}
+
+	//Second Case if both are Free
+	else if(res1==1&&res2==1)
+	{
+		uint32 total_size=size_befor_block+size_free_block+size_after_block;
+		set_block_data(temp1,total_size,0);
+		struct BlockElement* ptr=(struct BlockElement*)temp2;//block element pointer to after block to delete it from list
+		struct BlockElement* ptrBefore=(struct BlockElement*)temp1;
+		LIST_REMOVE(&freeBlocksList,ptr);
+
+
+	}
+
+	//Third Case if before is Allocated and after is free
+	else if(res1==0&&res2==1)
+	{
+		uint32 total_size=size_free_block+size_after_block;
+		set_block_data(va,total_size,0);
+		struct BlockElement* ptr=(struct BlockElement*)va;
+		struct BlockElement* after_block=(struct BlockElement*)temp2;
+		LIST_INSERT_BEFORE(&freeBlocksList,after_block,ptr);
+		LIST_REMOVE(&freeBlocksList,after_block);
+	}
+
+	//Fourth case if before is free and after is Allocated
+	else
+	{
+		uint32 total_size=size_befor_block+size_free_block;
+		set_block_data(temp1,total_size,0);
+	}
 }
 
 //=========================================
