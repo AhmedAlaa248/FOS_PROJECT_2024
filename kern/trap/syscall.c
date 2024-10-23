@@ -304,6 +304,11 @@ void sys_free_user_mem(uint32 virtual_address, uint32 size)
 
 	if(virtual_address>=USER_HEAP_MAX || virtual_address < USER_HEAP_START ||(void*)virtual_address==NULL )
 				env_exit();
+	else
+		{
+			if(virtual_address+size>USER_HEAP_MAX)
+				env_exit();
+		}
 
 	if(isBufferingEnabled())
 	{
@@ -322,7 +327,11 @@ void sys_allocate_user_mem(uint32 virtual_address, uint32 size)
 
 	if(virtual_address>=USER_HEAP_MAX || virtual_address < USER_HEAP_START ||(void*)virtual_address==NULL)
 				env_exit();
-
+	else
+	{
+		if(virtual_address+size>USER_HEAP_MAX)
+			env_exit();
+	}
 
 	allocate_user_mem(cur_env, virtual_address, size);
 	return;
