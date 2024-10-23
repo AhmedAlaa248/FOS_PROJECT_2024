@@ -118,6 +118,7 @@ void initialize_dynamic_allocator(uint32 daStart, uint32 initSizeOfAllocatedSpac
 	*blkFooter=initSizeOfAllocatedSpace - 2*sizeof(int);
 	*blkHeader=*blkFooter;
 	struct BlockElement* FirstBlock=(struct BlockElement*)(daStart+2*sizeof(int));
+	LIST_INIT(&freeBlocksList);
 	LIST_INSERT_HEAD(&freeBlocksList,FirstBlock);
 	cprintf("\n");
 }
@@ -201,7 +202,8 @@ void *alloc_block_FF(uint32 size)
 
 	if(ptr==NULL) // if no block is free in the list , or no suitable free block
 	{
-			return NULL;
+		sbrk(20);
+		return NULL;
 	}
 
 
@@ -257,25 +259,27 @@ void free_block(void *va)
 	if(va==NULL)
 		return;
 
-	//setting the free block with 0 flag
 	uint32 size_free_block=get_block_size(va);
 
 	//Before Block
-	void*temp1 = (char*)va - (2*sizeof(int)); //points to footer
-	uint32 size_befor_block =(*(uint32*)temp1) & ~(0X1);
-	temp1 = (char*)temp1 - size_befor_block+8;
-	int8 res1 = is_free_block(temp1);
+	void*temp1 = (char*)va -4; //points before footer
+	uint32 size_befor_block = get_block_size(temp1);
+	temp1 = (char*)temp1 - size_befor_block+4;
+	//int8 res1 = is_free_block(temp1);
+
 
 	//After BLock
 	void* temp2 = (char*)va + size_free_block;
 	uint32 size_after_block = get_block_size(temp2);
-	int8 res2 = is_free_block(temp2);
+	//int8 res2 = is_free_block(temp2);
 
-	set_block_data(va,size_free_block,0);
+
+
 
 	//First Case if both are allocated
-	if(res1==0&&res2==0)
+	if(!is_free_block(temp1)&&!is_free_block(temp2))
 	{
+		set_block_data(va,size_free_block,0);
 		struct BlockElement *ptr;
 		struct BlockElement* blockelement=(struct BlockElement*)(va);
 
@@ -288,29 +292,30 @@ void free_block(void *va)
 		if(ptr==NULL)
 		{
 			//THIS IS EDITED
+
 			LIST_INSERT_TAIL(&freeBlocksList,blockelement);
 		}
 		else
 		{
 			//THIS IS EDITED
+
 			LIST_INSERT_BEFORE(&freeBlocksList,ptr,blockelement);
 		}
 	}
 
 	//Second Case if both are Free
-	else if(res1==1&&res2==1)
+	else if(is_free_block(temp1)&&is_free_block(temp2))
 	{
 		uint32 total_size=size_befor_block+size_free_block+size_after_block;
 		set_block_data(temp1,total_size,0);
 		struct BlockElement* ptr=(struct BlockElement*)temp2;//block element pointer to after block to delete it from list
-		struct BlockElement* ptrBefore=(struct BlockElement*)temp1;
 		LIST_REMOVE(&freeBlocksList,ptr);
 
 
 	}
 
 	//Third Case if before is Allocated and after is free
-	else if(res1==0&&res2==1)
+	else if(!is_free_block(temp1)&&is_free_block(temp2))
 	{
 		uint32 total_size=size_free_block+size_after_block;
 		set_block_data(va,total_size,0);
