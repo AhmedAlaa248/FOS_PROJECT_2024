@@ -239,11 +239,85 @@ return (void*) ptr;
 //=========================================
 void *alloc_block_BF(uint32 size)
 {
+
+	{
+			if (size % 2 != 0) size++;	//ensure that the size is even (to use LSB as allocation flag)
+			if (size < DYN_ALLOC_MIN_BLOCK_SIZE)
+				size = DYN_ALLOC_MIN_BLOCK_SIZE ;
+			if (!is_initialized)
+			{
+				uint32 required_size = size + 2*sizeof(int) /*header & footer*/ + 2*sizeof(int) /*da begin & end*/ ;
+				uint32 da_start = (uint32)sbrk(ROUNDUP(required_size, PAGE_SIZE)/PAGE_SIZE);
+				uint32 da_break = (uint32)sbrk(0);
+				initialize_dynamic_allocator(da_start, da_break - da_start);
+			}
+		}
+
+
 	//TODO: [PROJECT'24.MS1 - BONUS] [3] DYNAMIC ALLOCATOR - alloc_block_BF
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("alloc_block_BF is not implemented yet");
+	//panic("alloc_block_BF is not implemented yet");
 	//Your Code is Here...
 
+	if(size<8||size==0)
+		return NULL;
+
+		uint32 total_size=size+8;
+		struct BlockElement *ptr;
+		struct BlockElement *temp;
+	    uint32 difference;
+
+		LIST_FOREACH(ptr,&freeBlocksList)
+			{
+				uint32 x=get_block_size(ptr);
+				if(x>=total_size)
+				{	difference=x-total_size;
+					break;
+				}
+			}
+
+		if(ptr==NULL)
+		{
+			sbrk(20);
+			return NULL;
+		}
+
+		LIST_FOREACH(ptr,&freeBlocksList)
+			{
+				uint32 x=get_block_size(ptr);
+				if(x<total_size)
+					continue;
+				else
+				{
+					if(x-total_size<=difference)
+					{
+						difference=x-total_size;
+						temp=ptr;
+					}
+				}
+			}
+
+
+		uint32 size_of_founded_block=get_block_size(temp);
+		uint32 remaining_block_size=size_of_founded_block-total_size;
+		if(remaining_block_size>=16)
+		{
+			set_block_data(temp,total_size,1);
+			void*temp2=(char*)temp+total_size;
+			set_block_data(temp2,remaining_block_size,0);
+			struct BlockElement* new_free_block=(struct BlockElement*)temp2;
+			LIST_INSERT_AFTER(&freeBlocksList,temp,new_free_block);
+			LIST_REMOVE(&freeBlocksList,temp);
+
+		}
+
+		else
+		{
+			set_block_data(temp,size_of_founded_block,1);
+			LIST_REMOVE(&freeBlocksList,temp);
+		}
+
+		return (void*)temp;
 }
 
 //===================================================
@@ -265,19 +339,19 @@ void free_block(void *va)
 	void*temp1 = (char*)va -4; //points before footer
 	uint32 size_befor_block = get_block_size(temp1);
 	temp1 = (char*)temp1 - size_befor_block+4;
-	//int8 res1 = is_free_block(temp1);
+	int8 res1 = is_free_block(temp1);
 
 
 	//After BLock
 	void* temp2 = (char*)va + size_free_block;
 	uint32 size_after_block = get_block_size(temp2);
-	//int8 res2 = is_free_block(temp2);
+	int8 res2 = is_free_block(temp2);
 
 
 
 
 	//First Case if both are allocated
-	if(!is_free_block(temp1)&&!is_free_block(temp2))
+	if(res1==0&&res2==0)
 	{
 		set_block_data(va,size_free_block,0);
 		struct BlockElement *ptr;
@@ -291,20 +365,16 @@ void free_block(void *va)
 
 		if(ptr==NULL)
 		{
-			//THIS IS EDITED
-
 			LIST_INSERT_TAIL(&freeBlocksList,blockelement);
 		}
 		else
 		{
-			//THIS IS EDITED
-
 			LIST_INSERT_BEFORE(&freeBlocksList,ptr,blockelement);
 		}
 	}
 
 	//Second Case if both are Free
-	else if(is_free_block(temp1)&&is_free_block(temp2))
+	else if(res1==1&&res2==1)
 	{
 		uint32 total_size=size_befor_block+size_free_block+size_after_block;
 		set_block_data(temp1,total_size,0);
@@ -315,7 +385,7 @@ void free_block(void *va)
 	}
 
 	//Third Case if before is Allocated and after is free
-	else if(!is_free_block(temp1)&&is_free_block(temp2))
+	else if(res1==0&&res2==1)
 	{
 		uint32 total_size=size_free_block+size_after_block;
 		set_block_data(va,total_size,0);
