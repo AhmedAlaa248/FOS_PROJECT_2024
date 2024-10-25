@@ -403,15 +403,94 @@ void free_block(void *va)
 	}
 }
 
+void forsplitting(void* va,uint32 new_size,uint32 sizeOfCurrBlock,uint32 remainingSize){
+
+
+	        if (remainingSize >= DYN_ALLOC_MIN_BLOCK_SIZE)
+	        {
+
+	            set_block_data(va, new_size, 1);
+
+	            void* newFreeBlock = (void*)((uint32)va + new_size);
+
+	            set_block_data(newFreeBlock, remainingSize, 0);
+	            LIST_INSERT_HEAD(&freeBlocksList, (struct BlockElement*)newFreeBlock);
+	        }
+}
 //=========================================
 // [6] REALLOCATE BLOCK BY FIRST FIT:
 //=========================================
 void *realloc_block_FF(void* va, uint32 new_size)
 {
-	//TODO: [PROJECT'24.MS1 - #08] [3] DYNAMIC ALLOCATOR - realloc_block_FF
-	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("realloc_block_FF is not implemented yet");
-	//Your Code is Here...
+
+    if (va == NULL && new_size == 0)
+    {
+        alloc_block_FF(0);
+        return NULL;
+    }
+
+
+    if (new_size == 0)
+    {
+        free_block(va);
+        return NULL;
+    }
+
+
+    if (va == NULL)
+    {
+        return (void*)alloc_block_FF(new_size);
+    }
+
+
+
+    uint32 sizeOfCurrBlock = get_block_size(va);
+    new_size = ROUNDUP(new_size + 2 * sizeof(int), 4);
+
+
+    if (new_size <= sizeOfCurrBlock)
+    {
+    	uint32 remainingSize = sizeOfCurrBlock - new_size;
+    	forsplitting(va, new_size, sizeOfCurrBlock,remainingSize);
+
+        return (void*)va;
+    }
+    if (new_size > sizeOfCurrBlock)
+    {
+        void* afterVA = (void*)((uint32)va + sizeOfCurrBlock);
+        if ((uint32)afterVA % sizeof(int) != 0) {
+            afterVA = (void*)((uint32)afterVA + sizeof(int));
+        }
+        uint32 sizeOfafterBlock = get_block_size(afterVA);
+        int8 isafterBlockFree = is_free_block(afterVA);
+
+
+        if (isafterBlockFree == 1 && (sizeOfCurrBlock + sizeOfafterBlock >= new_size))
+        {
+
+            LIST_REMOVE(&freeBlocksList, (struct BlockElement*)afterVA);
+
+
+            set_block_data(va, new_size, 1);
+
+
+            uint32 remainingSize = (sizeOfCurrBlock + sizeOfafterBlock) - new_size;
+
+            if (remainingSize >= DYN_ALLOC_MIN_BLOCK_SIZE)
+            {
+
+                void* newFreeBlock = (void*)((uint32)va + new_size);
+                set_block_data(newFreeBlock, remainingSize, 0);
+
+                LIST_INSERT_HEAD(&freeBlocksList, (struct BlockElement*)newFreeBlock);
+            }
+
+            return (void*)va;
+        }
+    }
+
+
+    return NULL;
 }
 
 /*********************************************************************************************/
