@@ -487,6 +487,18 @@ void *realloc_block_FF(void* va, uint32 new_size)
 
             return (void*)va;
         }
+        else if(isafterBlockFree == 0 && (sizeOfCurrBlock + sizeOfafterBlock >= new_size))
+        {
+        	void* ret = alloc_block_FF(new_size);
+        	va=ret;
+        	return (void*)ret;
+        }
+        else
+        {
+        	void* ret = sbrk(new_size);
+        	set_block_data(ret,new_size,1);
+        	return (void*)ret;
+        }
     }
 
 
