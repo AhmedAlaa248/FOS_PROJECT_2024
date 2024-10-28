@@ -30,7 +30,7 @@ void sleep(struct Channel *chan, struct spinlock* lk)
 {
 	//TODO: [PROJECT'24.MS1 - #10] [4] LOCKS - sleep
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	//	panic("sleep is not implemented yet");
+	//panic("sleep is not implemented yet");
 	//Your Code is Here...
 
 	struct Env *ElCurrentProc = get_cpu_proc();
@@ -46,7 +46,6 @@ void sleep(struct Channel *chan, struct spinlock* lk)
 	release_spinlock(&ProcessQueues.qlock);
 
 	acquire_spinlock(lk);
-
 }
 
 //==================================================
@@ -60,7 +59,7 @@ void wakeup_one(struct Channel *chan)
 {
 	//TODO: [PROJECT'24.MS1 - #11] [4] LOCKS - wakeup_one
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	//	panic("wakeup_one is not implemented yet");
+	//panic("wakeup_one is not implemented yet");
 	//Your Code is Here...
 
 	struct Env *ProcessWaked;

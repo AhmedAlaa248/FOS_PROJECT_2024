@@ -1512,7 +1512,35 @@ void test_realloc_block_FF_COMPLETE()
 	return;
 #endif
 
-	panic("this is UNSEEN test");
+	//panic("this is UNSEEN test");
+	void *startingBlock, *newBK, *blocksadjacent;
+
+	// 1. Reallocate a block to the same size (should do nothing and return the same block)
+	startingBlock = alloc_block_FF(64);
+	newBK = realloc_block_FF(startingBlock, 64);
+	assert(newBK == startingBlock);
+	cprintf("\nTest 5 passed: Reallocate block to the same size.\n");
+
+
+	// 2. Edge Case: Maximum allocation test
+	startingBlock = alloc_block_FF(DYN_ALLOC_MAX_BLOCK_SIZE - 16);
+	newBK = realloc_block_FF(startingBlock, DYN_ALLOC_MAX_BLOCK_SIZE);
+	if (newBK != NULL) {
+		cprintf("Test 6 passed: Maximum allocation block tested successfully.\n");
+	} else {
+		cprintf("Test 6 failed: Maximum allocation block not allocated.\n");
+	}
+
+	// 3. Reallocation to exact fit in adjacent free block
+	startingBlock = alloc_block_FF(64);
+	blocksadjacent = alloc_block_FF(64);
+	free_block(blocksadjacent);  // Free adjacent block to simulate exact fit scenario
+
+	newBK = realloc_block_FF(startingBlock, 128);  // Request a size that exactly fits combined space
+	assert(newBK == startingBlock);  // Should reuse the original block
+	cprintf("Test 7 passed: Reallocate block to exact fit in List of free block.\n");
+
+	cprintf("All other realloc_block_FF tests completed.\n");
 
 }
 

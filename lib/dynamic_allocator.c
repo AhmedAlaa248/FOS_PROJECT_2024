@@ -101,14 +101,11 @@ void initialize_dynamic_allocator(uint32 daStart, uint32 initSizeOfAllocatedSpac
 	//==================================================================================
 	//==================================================================================
 
-	int* tmp_ptr = (int*)daStart;
-		*tmp_ptr = -1 ;
-		*(tmp_ptr+1) = 1 ;
-
 	//TODO: [PROJECT'24.MS1 - #04] [3] DYNAMIC ALLOCATOR - initialize_dynamic_allocator
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("initialize_dynamic_allocator is not implemented yet");
 	//Your Code is Here...
+
 	uint32* dynamicAllocatorBeg=(uint32*) daStart;
 	uint32* dynamicAllocatorEnd=(uint32*) (daStart+initSizeOfAllocatedSpace-sizeof(int));
 	uint32* blkHeader=(uint32*) (daStart+sizeof(int));
@@ -121,6 +118,7 @@ void initialize_dynamic_allocator(uint32 daStart, uint32 initSizeOfAllocatedSpac
 	LIST_INIT(&freeBlocksList);
 	LIST_INSERT_HEAD(&freeBlocksList,FirstBlock);
 	cprintf("\n");
+
 }
 //==================================
 // [2] SET BLOCK HEADER & FOOTER:
@@ -148,7 +146,6 @@ void set_block_data(void* va, uint32 totalSize, bool isAllocated)
 		*header &= ~0x1;
 		*footer &= ~0x1;
 	}
-
 }
 
 
@@ -180,8 +177,6 @@ void *alloc_block_FF(uint32 size)
 	//panic("alloc_block_FF is not implemented yet");
 	//Your Code is Here...
 
-
-
 	if(size<8||size==0) // it is not possible
 		return NULL;
 
@@ -198,14 +193,11 @@ void *alloc_block_FF(uint32 size)
 		}
 	}
 
-
-
 	if(ptr==NULL) // if no block is free in the list , or no suitable free block
 	{
 		sbrk(20);
 		return NULL;
 	}
-
 
 	uint32 size_of_founded_free_block=get_block_size(ptr);
 	uint32 size_of_new_freeblock=size_of_founded_free_block-total_size; //rest of free block
@@ -231,8 +223,7 @@ void *alloc_block_FF(uint32 size)
 		LIST_REMOVE(&freeBlocksList,ptr);
 	}
 
-return (void*) ptr;
-
+	return (void*) ptr;
 }
 //=========================================
 // [4] ALLOCATE BLOCK BY BEST FIT:
@@ -241,17 +232,17 @@ void *alloc_block_BF(uint32 size)
 {
 
 	{
-			if (size % 2 != 0) size++;	//ensure that the size is even (to use LSB as allocation flag)
-			if (size < DYN_ALLOC_MIN_BLOCK_SIZE)
-				size = DYN_ALLOC_MIN_BLOCK_SIZE ;
-			if (!is_initialized)
-			{
-				uint32 required_size = size + 2*sizeof(int) /*header & footer*/ + 2*sizeof(int) /*da begin & end*/ ;
-				uint32 da_start = (uint32)sbrk(ROUNDUP(required_size, PAGE_SIZE)/PAGE_SIZE);
-				uint32 da_break = (uint32)sbrk(0);
-				initialize_dynamic_allocator(da_start, da_break - da_start);
-			}
+		if (size % 2 != 0) size++;	//ensure that the size is even (to use LSB as allocation flag)
+		if (size < DYN_ALLOC_MIN_BLOCK_SIZE)
+			size = DYN_ALLOC_MIN_BLOCK_SIZE ;
+		if (!is_initialized)
+		{
+			uint32 required_size = size + 2*sizeof(int) /*header & footer*/ + 2*sizeof(int) /*da begin & end*/ ;
+			uint32 da_start = (uint32)sbrk(ROUNDUP(required_size, PAGE_SIZE)/PAGE_SIZE);
+			uint32 da_break = (uint32)sbrk(0);
+			initialize_dynamic_allocator(da_start, da_break - da_start);
 		}
+	}
 
 
 	//TODO: [PROJECT'24.MS1 - BONUS] [3] DYNAMIC ALLOCATOR - alloc_block_BF
@@ -319,7 +310,6 @@ void *alloc_block_BF(uint32 size)
 
 		return (void*)temp;
 }
-
 //===================================================
 // [5] FREE BLOCK WITH COALESCING:
 //===================================================
@@ -329,7 +319,6 @@ void free_block(void *va)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("free_block is not implemented yet");
 	//Your Code is Here...
-
 	if(va==NULL)
 		return;
 
@@ -346,9 +335,6 @@ void free_block(void *va)
 	void* temp2 = (char*)va + size_free_block;
 	uint32 size_after_block = get_block_size(temp2);
 	int8 res2 = is_free_block(temp2);
-
-
-
 
 	//First Case if both are allocated
 	if(res1==0&&res2==0)
@@ -404,24 +390,27 @@ void free_block(void *va)
 }
 
 void forsplitting(void* va,uint32 new_size,uint32 sizeOfCurrBlock,uint32 remainingSize){
+	if (remainingSize >= DYN_ALLOC_MIN_BLOCK_SIZE)
+	{
 
+		set_block_data(va, new_size, 1);
 
-	        if (remainingSize >= DYN_ALLOC_MIN_BLOCK_SIZE)
-	        {
+		void* newFreeBlock = (void*)((uint32)va + new_size);
 
-	            set_block_data(va, new_size, 1);
-
-	            void* newFreeBlock = (void*)((uint32)va + new_size);
-
-	            set_block_data(newFreeBlock, remainingSize, 0);
-	            LIST_INSERT_HEAD(&freeBlocksList, (struct BlockElement*)newFreeBlock);
-	        }
+		set_block_data(newFreeBlock, remainingSize, 0);
+		LIST_INSERT_HEAD(&freeBlocksList, (struct BlockElement*)newFreeBlock);
+	}
 }
+
 //=========================================
 // [6] REALLOCATE BLOCK BY FIRST FIT:
 //=========================================
 void *realloc_block_FF(void* va, uint32 new_size)
 {
+	//TODO: [PROJECT'24.MS1 - #08] [3] DYNAMIC ALLOCATOR - realloc_block_FF
+	//COMMENT THE FOLLOWING LINE BEFORE START CODING
+	//panic("realloc_block_FF is not implemented yet");
+	//Your Code is Here...
 
     if (va == NULL && new_size == 0)
     {
