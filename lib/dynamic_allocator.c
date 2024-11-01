@@ -482,7 +482,7 @@ void *realloc_block_FF(void* va, uint32 new_size)
         else if(isafterBlockFree == 0 && (sizeOfCurrBlock + sizeOfafterBlock >= new_size))
         {
         	void* ret = alloc_block_FF(new_size);
-        	free_block(va);
+        	//free_block(va);
         	va=ret;
         	//NOT HANDLED IN TESTS
         	cprintf("NEW size > size and next is not free\n");
