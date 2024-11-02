@@ -195,8 +195,12 @@ void *alloc_block_FF(uint32 size)
 
 	if(ptr==NULL) // if no block is free in the list , or no suitable free block
 	{
-		sbrk(20);
-		return NULL;
+		void * result = sbrk(1);
+		if(result==(void*)-1)
+			return NULL;
+		else
+			return alloc_block_FF(size);
+
 	}
 
 	uint32 size_of_founded_free_block=get_block_size(ptr);
@@ -269,8 +273,11 @@ void *alloc_block_BF(uint32 size)
 
 		if(ptr==NULL)
 		{
-			sbrk(20);
-			return NULL;
+			void * result = sbrk(1);
+					if(result==(void*)-1)
+						return NULL;
+					else
+						return alloc_block_BF(size);
 		}
 
 		LIST_FOREACH(ptr,&freeBlocksList)

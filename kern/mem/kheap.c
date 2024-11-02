@@ -16,6 +16,8 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 	// Write your code here, remove the panic and write your code
 	//panic("initialize_kheap_dynamic_allocator() is not implemented yet...!!");
 
+
+
 	if (initSizeToAllocate % PAGE_SIZE != 0) {
 		initSizeToAllocate = ROUNDUP(initSizeToAllocate, PAGE_SIZE);
 	}
@@ -46,12 +48,14 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 		}
 	}
 
+
 	initialize_dynamic_allocator(hStart, initSizeToAllocate);
 	return 0;
 }
 
 void* sbrk(int numOfPages)
 {
+
 	/* numOfPages > 0: move the segment break of the kernel to increase the size of its heap by the given numOfPages,
 	 * 				you should allocate pages and map them into the kernel virtual address space,
 	 * 				and returns the address of the previous break (i.e. the beginning of newly mapped memory).
@@ -63,12 +67,59 @@ void* sbrk(int numOfPages)
 	 */
 
 	//MS2: COMMENT THIS LINE BEFORE START CODING==========
-	return (void*)-1 ;
+	//return (void*)-1 ;
 	//====================================================
 
 	//TODO: [PROJECT'24.MS2 - #02] [1] KERNEL HEAP - sbrk
 	// Write your code here, remove the panic and write your code
-	panic("sbrk() is not implemented yet...!!");
+	//panic("sbrk() is not implemented yet...!!");
+
+	if(numOfPages<0)
+	{
+	  panic("can't Allocate no. of page with negative value");
+	  return (void*)-1;
+	}
+
+	 if(numOfPages==0)
+	  return (void*)segmentBr;
+
+
+	 uint32 size =numOfPages*PAGE_SIZE;
+
+	 if(segmentBr+size>hLimit)
+	 {
+	   panic("You exceeded the limit");
+	   return (void*)-1;
+	 }
+
+
+	 for(int i=segmentBr,j=0;j<numOfPages;i+=PAGE_SIZE,j++)
+	 {
+		 struct FrameInfo *freeFrame;
+		 int ret = allocate_frame(&freeFrame);
+		 if(ret==E_NO_MEM)
+			 return (void*)-1;
+
+		 ret=map_frame(ptr_page_directory,freeFrame,i,PERM_WRITEABLE|PERM_PRESENT);
+		 if(ret==E_NO_MEM)
+		 {
+			 free_frame(freeFrame);
+			 return (void*)-1;
+		 }
+
+	 }
+
+	 void *oldBreak=(void*)segmentBr;
+	 void*ptr=(void*)segmentBr;
+	 set_block_data(ptr,size,0);
+	 segmentBr+=size;
+
+	 free_block(ptr);
+
+	 uint32 *newEndBlock=(uint32*)segmentBr-1;
+	 *newEndBlock=1;
+
+	 return oldBreak;
 }
 
 //TODO: [PROJECT'24.MS2 - BONUS#2] [1] KERNEL HEAP - Fast Page Allocator
@@ -98,12 +149,18 @@ unsigned int kheap_physical_address(unsigned int virtual_address)
 {
 	//TODO: [PROJECT'24.MS2 - #05] [1] KERNEL HEAP - kheap_physical_address
 	// Write your code here, remove the panic and write your code
-	panic("kheap_physical_address() is not implemented yet...!!");
+	//panic("kheap_physical_address() is not implemented yet...!!");
 
 	//return the physical address corresponding to given virtual_address
 	//refer to the project presentation and documentation for details
 
 	//EFFICIENT IMPLEMENTATION ~O(1) IS REQUIRED ==================
+
+	uint32 offset = virtual_address&(0x00000FFF);
+		uint32* ptr_page_table;
+		struct FrameInfo *frame_info = get_frame_info(ptr_page_directory,virtual_address,&ptr_page_table);
+		uint32 pa=to_physical_address(frame_info)+offset;
+		return pa;
 }
 
 unsigned int kheap_virtual_address(unsigned int physical_address)
