@@ -88,7 +88,6 @@ void* sbrk(int numOfPages)
 
 	 if(segmentBr+size>hLimit)
 	 {
-	   panic("You exceeded the limit");
 	   return (void*)-1;
 	 }
 
@@ -111,13 +110,13 @@ void* sbrk(int numOfPages)
 
 	 void *oldBreak=(void*)segmentBr;
 	 void*ptr=(void*)segmentBr;
-	 set_block_data(ptr,size,0);
+	 set_block_data(ptr,size,1);
 	 segmentBr+=size;
-
-	 free_block(ptr);
 
 	 uint32 *newEndBlock=(uint32*)segmentBr-1;
 	 *newEndBlock=1;
+
+	 free_block(ptr);
 
 	 return oldBreak;
 }
@@ -128,9 +127,79 @@ void* kmalloc(unsigned int size)
 {
 	//TODO: [PROJECT'24.MS2 - #03] [1] KERNEL HEAP - kmalloc
 	// Write your code here, remove the panic and write your code
-	kpanic_into_prompt("kmalloc() is not implemented yet...!!");
+	//kpanic_into_prompt("kmalloc() is not implemented yet...!!");
 
 	// use "isKHeapPlacementStrategyFIRSTFIT() ..." functions to check the current strategy
+	 // Return NULL for zero allocation requests
+
+	    if (size == 0) {
+	        return NULL;
+	    }
+
+
+	    if (size <= DYN_ALLOC_MAX_BLOCK_SIZE) {
+	        return alloc_block_FF(size);
+
+	    }
+
+
+	    uint32 numPages = (ROUNDUP(size, PAGE_SIZE)) / PAGE_SIZE;
+	//    cprintf("num of pages %d \n",numPages);
+	    uint32 contiguous_pages = 0;
+	    uint32 start_search_address = hLimit + PAGE_SIZE;
+	    void* start_address = NULL;
+	    uint32 *ptr_page_table = NULL;
+
+	    for (uint32 i = start_search_address; i < KERNEL_HEAP_MAX; i += PAGE_SIZE) {
+	        struct FrameInfo *frame = get_frame_info(ptr_page_directory, i, &ptr_page_table);
+
+	        if (frame == NULL) {
+	            if (contiguous_pages == 0) {
+	                start_address = (void*)i;
+	            }
+	            contiguous_pages++;
+
+
+	            if (contiguous_pages == numPages) {
+	                break;
+	            }
+	        }
+	          else {
+	            contiguous_pages = 0;
+	            start_address = NULL;
+	        }
+	    }
+
+
+	    if (contiguous_pages < numPages) {
+	    //cprintf("Error: Not enough contiguous space found for %d pages\n", numPages);
+	        return NULL;
+	    }
+
+
+	    uint32 allocated_pages = 0;
+	    for (uint32 i = (uint32)start_address; allocated_pages < numPages; i += PAGE_SIZE) {
+	        struct FrameInfo *new_frame = NULL;
+
+
+	        if (allocate_frame(&new_frame) != 0) {
+	            cprintf("Error: Frame allocation failed at address %p\n", (void*)i);
+	            return NULL;
+	        }
+
+
+	        if (map_frame(ptr_page_directory, new_frame, i, PERM_WRITEABLE | PERM_PRESENT ) != 0) {
+	            cprintf("Error: Frame mapping failed at address %p\n", (void*)i);
+	            return NULL;
+	        }
+
+	        allocated_pages++;
+	    }
+
+
+	    cprintf("Allocated %d pages starting at address %p\n", numPages, start_address);
+
+	    return start_address;
 
 }
 
