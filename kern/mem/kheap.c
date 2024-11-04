@@ -224,12 +224,24 @@ unsigned int kheap_physical_address(unsigned int virtual_address)
 	//refer to the project presentation and documentation for details
 
 	//EFFICIENT IMPLEMENTATION ~O(1) IS REQUIRED ==================
-
+/*
 	uint32 offset = virtual_address&(0x00000FFF);
 	uint32* ptr_page_table;
 	struct FrameInfo *frame_info = get_frame_info(ptr_page_directory,virtual_address,&ptr_page_table);
-	uint32 pa=to_physical_address(frame_info)+offset;
+	uint32 pa=to_physical_address(frame_info)+offset+550;
 	return pa;
+*/
+
+	uint32 offset = virtual_address&(0x00000FFF);
+	uint32 Page_Index=PTX(virtual_address);
+	uint32* ptr_page_table;
+	get_page_table(ptr_page_directory,virtual_address,&ptr_page_table);
+	uint32 entry = ptr_page_table[Page_Index];
+	uint32 frameNo=entry&(0xFFFFF000);
+	uint32 pa = frameNo+offset;
+	return pa;
+
+
 }
 
 unsigned int kheap_virtual_address(unsigned int physical_address)
