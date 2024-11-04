@@ -157,22 +157,29 @@ unsigned int kheap_physical_address(unsigned int virtual_address)
 	//EFFICIENT IMPLEMENTATION ~O(1) IS REQUIRED ==================
 
 	uint32 offset = virtual_address&(0x00000FFF);
-		uint32* ptr_page_table;
-		struct FrameInfo *frame_info = get_frame_info(ptr_page_directory,virtual_address,&ptr_page_table);
-		uint32 pa=to_physical_address(frame_info)+offset;
-		return pa;
+	uint32* ptr_page_table;
+	struct FrameInfo *frame_info = get_frame_info(ptr_page_directory,virtual_address,&ptr_page_table);
+	uint32 pa=to_physical_address(frame_info)+offset;
+	return pa;
 }
 
 unsigned int kheap_virtual_address(unsigned int physical_address)
 {
 	//TODO: [PROJECT'24.MS2 - #06] [1] KERNEL HEAP - kheap_virtual_address
 	// Write your code here, remove the panic and write your code
-	panic("kheap_virtual_address() is not implemented yet...!!");
+	//panic("kheap_virtual_address() is not implemented yet...!!");
 
 	//return the virtual address corresponding to given physical_address
 	//refer to the project presentation and documentation for details
 
 	//EFFICIENT IMPLEMENTATION ~O(1) IS REQUIRED ==================
+
+	struct FrameInfo *frame;
+	frame = to_frame_info(physical_address);
+	if(frame==NULL)
+		return 0;
+	return frame->bufferedVA;
+
 }
 //=================================================================================//
 //============================== BONUS FUNCTION ===================================//
