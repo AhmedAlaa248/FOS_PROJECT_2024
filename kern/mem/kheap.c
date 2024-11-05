@@ -3,7 +3,13 @@
 #include <inc/memlayout.h>
 #include <inc/dynamic_allocator.h>
 #include "memory_manager.h"
+#define MAX_SHEFO 1024
+struct AllocationInfo {
+    void* start_address;
+    uint32 num_pages;
+};
 
+struct AllocationInfo allocations[MAX_SHEFO];
 //Initialize the dynamic allocator of kernel heap with the given start address, size & limit
 //All pages in the given range should be allocated
 //Remember: call the initialize_dynamic_allocator(..) to complete the initialization
@@ -199,6 +205,12 @@ void* kmalloc(unsigned int size)
 
 	    cprintf("Allocated %d pages starting at address %p\n", numPages, start_address);
 
+
+	    if (allocation_co < MAX_SHEFO) {
+	        allocations[allocation_co].start_address = start_address;
+	        allocations[allocation_co].num_pages = numPages;
+	        allocation_co++;
+	    }
 	    return start_address;
 
 }
@@ -207,8 +219,50 @@ void kfree(void* virtual_address)
 {
 	//TODO: [PROJECT'24.MS2 - #04] [1] KERNEL HEAP - kfree
 	// Write your code here, remove the panic and write your code
-	panic("kfree() is not implemented yet...!!");
+	//	panic("kfree() is not implemented yet...!!");
+	if ((uint32)virtual_address >= KERNEL_HEAP_START && (uint32)virtual_address < hLimit) {
 
+	        free_block(virtual_address);
+	        return;
+	    }
+
+
+	    else if ((uint32)virtual_address >= hLimit + PAGE_SIZE && (uint32)virtual_address < KERNEL_HEAP_MAX) {
+	        uint32 *ptr_page_table = NULL;
+	        uint32 va = (uint32)virtual_address;
+	        bool found =0;
+	        uint32 number=0;
+	        uint32 index = 0;
+	        	for(uint32 i =0 ;i < allocation_co ; i++){
+	        		if (allocations[i].start_address == virtual_address){
+	        			found=1;
+	        			number= allocations[i].num_pages;
+	        			index= i;
+	        			break;
+	        		}
+	        	}
+	        for (uint32 i = (uint32)virtual_address; i < (uint32)virtual_address + (PAGE_SIZE*number); i += PAGE_SIZE) {
+
+
+	        	struct FrameInfo* freedFrame = get_frame_info(ptr_page_directory,i, &ptr_page_table);
+	        	        if (freedFrame != NULL) {
+
+
+	        	            unmap_frame(ptr_page_directory, i);
+
+
+
+//	        	            if(freedFrame -> references == 0){
+//	        	                 free_frame(freedFrame);
+//	        	             }
+	        	        }
+	        }
+
+
+	        	        	        	        	allocations[index].start_address = NULL;
+	        	        	        	        	allocations[index].num_pages = 0;
+
+	    }
 	//you need to get the size of the given allocation using its address
 	//refer to the project presentation and documentation for details
 
