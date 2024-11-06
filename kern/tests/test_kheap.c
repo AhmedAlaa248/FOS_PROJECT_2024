@@ -1611,7 +1611,6 @@ int test_kheap_phys_addr()
 				//if (((ptr_table[j] & 0xFFFFF000)+((ptr_table[j] & PERM_PRESENT) == 0? 0 : va & 0x00000FFF)) != allPAs[i])
 				if (expected != allPAs[i])
 				{
-
 					//cprintf("\nVA = %x, table entry = %x, khep_pa = %x\n",va + j*PAGE_SIZE, (ptr_table[j] & 0xFFFFF000) , allPAs[i]);
 					if (correct)
 					{ correct = 0; cprintf("5.2 Wrong kheap_physical_address\n"); }
