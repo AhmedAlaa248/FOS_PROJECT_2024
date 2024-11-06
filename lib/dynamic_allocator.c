@@ -195,8 +195,12 @@ void *alloc_block_FF(uint32 size)
 
 	if(ptr==NULL) // if no block is free in the list , or no suitable free block
 	{
-		sbrk(20);
-		return NULL;
+		void * result = sbrk(1);
+		if(result==(void*)-1)
+			return NULL;
+		else
+			return alloc_block_FF(size);
+
 	}
 
 	uint32 size_of_founded_free_block=get_block_size(ptr);
@@ -269,8 +273,11 @@ void *alloc_block_BF(uint32 size)
 
 		if(ptr==NULL)
 		{
-			sbrk(20);
-			return NULL;
+			void * result = sbrk(1);
+					if(result==(void*)-1)
+						return NULL;
+					else
+						return alloc_block_BF(size);
 		}
 
 		LIST_FOREACH(ptr,&freeBlocksList)
@@ -415,6 +422,7 @@ void *realloc_block_FF(void* va, uint32 new_size)
     if (va == NULL && new_size == 0)
     {
         alloc_block_FF(0);
+        cprintf("VA NULL & SIZE = 0\n");
         return NULL;
     }
 
@@ -422,12 +430,14 @@ void *realloc_block_FF(void* va, uint32 new_size)
     if (new_size == 0)
     {
         free_block(va);
+        cprintf("SIZE = 0\n");
         return NULL;
     }
 
 
     if (va == NULL)
     {
+    	cprintf("VA NULL\n");
         return (void*)alloc_block_FF(new_size);
     }
 
@@ -441,7 +451,7 @@ void *realloc_block_FF(void* va, uint32 new_size)
     {
     	uint32 remainingSize = sizeOfCurrBlock - new_size;
     	forsplitting(va, new_size, sizeOfCurrBlock,remainingSize);
-
+    	//cprintf("NEW size less than or equal size\n");
         return (void*)va;
     }
     if (new_size > sizeOfCurrBlock)
@@ -473,24 +483,28 @@ void *realloc_block_FF(void* va, uint32 new_size)
 
                 LIST_INSERT_HEAD(&freeBlocksList, (struct BlockElement*)newFreeBlock);
             }
-
+            //cprintf("NEW size > size and next is free\n");
             return (void*)va;
         }
         else if(isafterBlockFree == 0 && (sizeOfCurrBlock + sizeOfafterBlock >= new_size))
         {
         	void* ret = alloc_block_FF(new_size);
+        	//free_block(va);
         	va=ret;
+        	//NOT HANDLED IN TESTS
+        	cprintf("NEW size > size and next is not free\n");
         	return (void*)ret;
         }
         else
         {
         	void* ret = sbrk(new_size);
         	set_block_data(ret,new_size,1);
+        	cprintf("SBRK\n");
         	return (void*)ret;
         }
     }
 
-
+    cprintf("Nothing\n");
     return NULL;
 }
 
