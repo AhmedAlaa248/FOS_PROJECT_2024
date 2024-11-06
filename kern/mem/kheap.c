@@ -285,10 +285,13 @@ unsigned int kheap_physical_address(unsigned int virtual_address)
 	uint32 pa=to_physical_address(frame_info)+offset+550;
 	return pa;
 */
+	uint32* ptr_page_table;
+	struct FrameInfo *frame_info = get_frame_info(ptr_page_directory,virtual_address,&ptr_page_table);
+	if(frame_info==NULL)
+		return 0;
 
 	uint32 offset = virtual_address&(0x00000FFF);
 	uint32 Page_Index=PTX(virtual_address);
-	uint32* ptr_page_table;
 	get_page_table(ptr_page_directory,virtual_address,&ptr_page_table);
 	uint32 entry = ptr_page_table[Page_Index];
 	uint32 frameNo=entry&(0xFFFFF000);
