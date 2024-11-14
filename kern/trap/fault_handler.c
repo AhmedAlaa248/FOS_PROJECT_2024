@@ -227,7 +227,32 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 		//cprintf("PLACEMENT=========================WS Size = %d\n", wsSize );
 		//TODO: [PROJECT'24.MS2 - #09] [2] FAULT HANDLER I - Placement
 		// Write your code here, remove the panic and write your code
-		panic("page_fault_handler().PLACEMENT is not implemented yet...!!");
+		//panic("page_fault_handler().PLACEMENT is not implemented yet...!!");
+		struct FrameInfo* ptr = NULL;
+		allocate_frame(&ptr);
+		map_frame(faulted_env->env_page_directory,ptr,fault_va,PERM_WRITEABLE);
+		int isPageReadSuccessfully = pf_read_env_page(faulted_env,(void*)fault_va);
+		struct WorkingSetElement* ele = env_page_ws_list_create_element(faulted_env,fault_va);
+		if(isPageReadSuccessfully==E_PAGE_NOT_EXIST_IN_PF)
+		{
+			if((fault_va >= USTACKBOTTOM && fault_va < USTACKTOP) || (fault_va >= USER_HEAP_START && fault_va < USER_HEAP_MAX))
+			{
+				//if valid do nothing
+			}
+			else
+			{
+				faulted_env->pageFaultsCounter++;
+				sched_kill_env(faulted_env->env_id);
+				return;
+			}
+			LIST_INSERT_TAIL(&faulted_env->page_WS_list,ele);
+						if(LIST_SIZE(&faulted_env->page_WS_list)<faulted_env->page_WS_max_size)
+							faulted_env->page_last_WS_element=NULL;
+						else {
+							faulted_env->page_last_WS_element=LIST_FIRST(&faulted_env->page_WS_list);
+						}
+		}
+
 
 		//refer to the project presentation and documentation for details
 	}

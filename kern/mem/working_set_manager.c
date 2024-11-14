@@ -19,8 +19,20 @@ inline struct WorkingSetElement* env_page_ws_list_create_element(struct Env* e, 
 	//TODO: [PROJECT'24.MS2 - #07] [2] FAULT HANDLER I - Create a new WS element
 	//If failed to create a new one, kernel should panic()!
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("env_page_ws_list_create_element is not implemented yet");
+	//panic("env_page_ws_list_create_element is not implemented yet");
 	//Your Code is Here...
+	uint32 sizeOfSet = sizeof(struct WorkingSetElement);
+	struct WorkingSetElement* ele = (struct WorkingSetElement*)kmalloc(sizeOfSet);
+	if(ele!=NULL){
+		ele->virtual_address=virtual_address;
+		return ele;
+	}
+	else
+	{
+		panic("Failed to create element in working set list");
+	}
+	return NULL;
+
 
 }
 inline void env_page_ws_invalidate(struct Env* e, uint32 virtual_address)
