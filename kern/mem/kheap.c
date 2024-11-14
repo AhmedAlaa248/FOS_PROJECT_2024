@@ -48,6 +48,10 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 			panic("There is NO ENOUGH MEMORY");
 			free_frame(frametobeallocated) ;
 		}
+
+		uint32 frameNo=to_physical_address(frametobeallocated);
+		frameNo=(frameNo>>12);
+		physical_to_virtual_map[frameNo] = i;
 	}
 
 	initialize_dynamic_allocator(hStart, initSizeToAllocate);
@@ -103,6 +107,10 @@ void* sbrk(int numOfPages)
 			 free_frame(freeFrame);
 			 return (void*)-1;
 		 }
+
+		 uint32 frameNo=to_physical_address(freeFrame);
+		 frameNo=(frameNo>>12);
+		 physical_to_virtual_map[frameNo] = i;
 
 	 }
 

@@ -226,18 +226,7 @@ void *alloc_block_FF(uint32 size)
 		set_block_data(ptr,size_of_founded_free_block,1);
 		LIST_REMOVE(&freeBlocksList,ptr);
 	}
-// map hena 3shan test bta3 5.2 ele bayz
-//	uint32 start_address = (uint32)ptr;
-//	for (uint32 i = 0; i < total_size; i += PAGE_SIZE) {
-//	    uint32 physical_page = start_address + i;
-//	    uint32 frame_number = physical_page / PAGE_SIZE;
-//
-//
-//	    physical_to_virtual_map[frame_number] = start_address + i;
-//
-//
-//	    cprintf("[alloc_block_FF] Mapping frame %u to virtual address %p\n", frame_number, (void*)(start_address));
-//	}
+
 	return (void*) ptr;
 }
 //=========================================
@@ -405,13 +394,7 @@ void free_block(void *va)
 		uint32 total_size=size_befor_block+size_free_block;
 		set_block_data(temp1,total_size,0);
 	}
-    // Unmap hena 3shan test bta3 5.2 ele bayz
-//    uint32 start_addresss = (uint32)va;
-//    for (uint32 i = 0; i < size_free_block; i += PAGE_SIZE) {
-//        uint32 physical_page = start_addresss + i;
-//        uint32 frame_numberr = physical_page / PAGE_SIZE;
-//        physical_to_virtual_map[frame_numberr] = 0;
-//    }
+
 }
 
 void forsplitting(void* va,uint32 new_size,uint32 sizeOfCurrBlock,uint32 remainingSize){
