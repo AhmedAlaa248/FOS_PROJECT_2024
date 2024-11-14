@@ -176,7 +176,10 @@ void* kmalloc(unsigned int size)
 			cprintf("Error: Frame mapping failed at address %p\n", (void*)i);
 			return NULL;
 		}
-
+//		cprintf("           Mapped frame at virtual address %p to physical frame %p\n", (void*)i, (void*)to_physical_address(new_frame));
+        uint32 frame_numberr = to_physical_address(new_frame) / PAGE_SIZE;
+        physical_to_virtual_map[frame_numberr] = i;
+//        cprintf("           Updated physical to virtual map: frame %u -> virtual address %p\n", frame_numberr, (void*)i);
 		allocated_pages++;
 	}
 
@@ -185,6 +188,7 @@ void* kmalloc(unsigned int size)
 		allocations[allocation_co].num_pages = numPages;
 		allocation_co++;
 	}
+
 	return start_address;
 }
 
@@ -221,10 +225,12 @@ void kfree(void* virtual_address)
 		{
 			struct FrameInfo* freedFrame = get_frame_info(ptr_page_directory,i, &ptr_page_table);
 				if (freedFrame != NULL) {
+
+					uint32 frame_numberr = to_physical_address(freedFrame) / PAGE_SIZE;
+					physical_to_virtual_map[frame_numberr] = 0;
 					unmap_frame(ptr_page_directory, i);
 
-//					if(freedFrame -> references == 0)
-//						free_frame(freedFrame);
+
 				}
 		}
 		allocations[index].start_address = NULL;
@@ -269,18 +275,22 @@ unsigned int kheap_virtual_address(unsigned int physical_address)
 {
 	//TODO: [PROJECT'24.MS2 - #06] [1] KERNEL HEAP - kheap_virtual_address
 	// Write your code here, remove the panic and write your code
-	//panic("kheap_virtual_address() is not implemented yet...!!");
+//	panic("kheap_virtual_address() is not implemented yet...!!");
+	   uint32 frame_number = physical_address / PAGE_SIZE;
 
+	    if (frame_number >= 1200000 || physical_to_virtual_map[frame_number] == 0) {
+	        return 0;  // No mapping found
+	    }
+
+	    uint32 offset = physical_address & (PAGE_SIZE - 1);
+	    unsigned int virtual_address = physical_to_virtual_map[frame_number] + offset;
+
+	    return virtual_address;
 	//return the virtual address corresponding to given physical_address
 	//refer to the project presentation and documentation for details
 
 	//EFFICIENT IMPLEMENTATION ~O(1) IS REQUIRED ==================
 
-	struct FrameInfo *frame;
-	frame = to_frame_info(physical_address);
-	if(frame==NULL)
-		return 0;
-	return frame->bufferedVA;
 
 }
 //=================================================================================//
