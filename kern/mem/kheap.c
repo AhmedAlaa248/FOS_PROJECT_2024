@@ -180,7 +180,7 @@ void* kmalloc(unsigned int size)
 			return NULL;
 		}
 
-		if (map_frame(ptr_page_directory, new_frame, i, PERM_WRITEABLE | PERM_PRESENT ) != 0) {
+		if (map_frame(ptr_page_directory, new_frame, i, PERM_WRITEABLE) != 0) {
 			cprintf("Error: Frame mapping failed at address %p\n", (void*)i);
 			return NULL;
 		}
