@@ -151,6 +151,24 @@ void fault_handler(struct Trapframe *tf)
 			//TODO: [PROJECT'24.MS2 - #08] [2] FAULT HANDLER I - Check for invalid pointers
 			//(e.g. pointing to unmarked user heap page, kernel or wrong access rights),
 			//your code is here
+			int writeable = pt_get_page_permissions(faulted_env->env_page_directory, fault_va);
+			if (writeable & PERM_PRESENT){
+				if((writeable & PERM_WRITEABLE) != PERM_WRITEABLE){
+					cprintf("Read only permission");
+					env_exit();
+				}
+			}
+			if(fault_va >= USER_LIMIT){
+				cprintf("Above the user limit");
+				env_exit();
+			}
+			if((writeable & PERM_AVAILABLE) != PERM_AVAILABLE){
+				if(fault_va >= USER_HEAP_START && fault_va <= USER_HEAP_MAX)
+				{
+					cprintf("unmarked page");
+					env_exit();
+				}
+			}
 
 			/*============================================================================================*/
 		}
