@@ -55,7 +55,7 @@ void print_blocks_list(struct MemBlock_LIST list);
 //In KernelHeap: should be implemented inside kern/mem/kheap.c
 //In UserHeap: should be implemented inside lib/uheap.c
 void* sbrk(int numOfPages);
-uint32 physical_to_virtual_map[1200000];
+uint32 physical_to_virtual_map[512];
 void initialize_dynamic_allocator(uint32 daStart, uint32 initSizeOfAllocatedSpace);
 void set_block_data(void* va, uint32 totalSize, bool isAllocated);
 void *alloc_block(uint32 size, int ALLOC_STRATEGY);
