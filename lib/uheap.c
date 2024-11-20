@@ -1,5 +1,13 @@
 #include <inc/lib.h>
 
+struct heapS {
+	void * returnedVA;
+	uint32 pagesNum;
+	bool marked;
+};
+
+struct heapS pagesArray[NUM_OF_UHEAP_PAGES];
+
 //==================================================================================//
 //============================ REQUIRED FUNCTIONS ==================================//
 //==================================================================================//
@@ -24,7 +32,55 @@ void* malloc(uint32 size)
 	//==============================================================
 	//TODO: [PROJECT'24.MS2 - #12] [3] USER HEAP [USER SIDE] - malloc()
 	// Write your code here, remove the panic and write your code
-	panic("malloc() is not implemented yet...!!");
+
+	if(size <= DYN_ALLOC_MAX_BLOCK_SIZE)
+		return alloc_block_FF(size);
+
+	if(sys_isUHeapPlacementStrategyFIRSTFIT()){
+
+		uint32 pageNumToAlloc = ROUNDUP(size , PAGE_SIZE) / PAGE_SIZE;
+		uint32 freePages = 0;
+		uint32 starti = (uint32) myEnv->hard_limit + PAGE_SIZE;
+
+		void *startVA = (void *)starti;
+		uint32 *ptr_page_table = NULL;
+		uint32 page_number ;
+
+		cprintf("First loop\n");
+		for (uint32 i = starti; i < USER_HEAP_MAX; i += PAGE_SIZE){
+			page_number =(i - starti) / PAGE_SIZE;
+			if (pagesArray[page_number].marked == 0){
+				if(freePages == 0)
+					startVA =(void*) i;
+
+				freePages++;
+				if(freePages == pageNumToAlloc) break;
+			}else{
+				freePages = 0;
+				startVA = NULL;
+			}
+		}
+		cprintf("First loop finished\n");
+
+		if(freePages < pageNumToAlloc)
+			return NULL;
+
+		cprintf("Second loop\n");
+		for(uint32 i = (uint32) startVA; i < (uint32) startVA + (freePages * PAGE_SIZE) ; i+= PAGE_SIZE){
+			page_number = (i - starti) / PAGE_SIZE;
+			pagesArray[page_number].marked = 1;
+		}
+
+		cprintf("Second loop finished\n");
+		page_number = ((uint32)startVA - starti) / PAGE_SIZE;
+		pagesArray[page_number].returnedVA = startVA;
+		pagesArray[page_number].pagesNum = freePages;
+
+		sys_allocate_user_mem((uint32)startVA, pageNumToAlloc * PAGE_SIZE);
+		return startVA;
+
+	}
+
 	return NULL;
 	//Use sys_isUHeapPlacementStrategyFIRSTFIT() and	sys_isUHeapPlacementStrategyBESTFIT()
 	//to check the current strategy
