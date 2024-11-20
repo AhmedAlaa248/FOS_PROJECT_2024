@@ -8,7 +8,7 @@ struct AllocationInfo {
     void* start_address;
     uint32 num_pages;
 };
-
+uint32 physical_to_virtual_map[65536];
 struct AllocationInfo allocations[MAX_SHEFO];
 //Initialize the dynamic allocator of kernel heap with the given start address, size & limit
 //All pages in the given range should be allocated
@@ -16,6 +16,13 @@ struct AllocationInfo allocations[MAX_SHEFO];
 //Return:
 //	On success: 0
 //	Otherwise (if no memory OR initial size exceed the given limit): PANIC
+void initphysicaltovirtualmap()
+{
+	for(int i=0;i<number_of_frames-1;i++)
+	{
+		physical_to_virtual_map[i]=0;
+	}
+}
 int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate, uint32 daLimit)
 {
 	//TODO: [PROJECT'24.MS2 - #01] [1] KERNEL HEAP - initialize_kheap_dynamic_allocator
@@ -286,7 +293,7 @@ unsigned int kheap_virtual_address(unsigned int physical_address)
 //	panic("kheap_virtual_address() is not implemented yet...!!");
 	   uint32 frame_number = physical_address / PAGE_SIZE;
 
-	    if (frame_number >= 1200000 || physical_to_virtual_map[frame_number] == 0) {
+	    if (frame_number >= 65536 || physical_to_virtual_map[frame_number] == 0) {
 	        return 0;  // No mapping found
 	    }
 
