@@ -46,7 +46,6 @@ void* malloc(uint32 size)
 		uint32 *ptr_page_table = NULL;
 		uint32 page_number ;
 
-		cprintf("First loop\n");
 		for (uint32 i = starti; i < USER_HEAP_MAX; i += PAGE_SIZE){
 			page_number =(i - starti) / PAGE_SIZE;
 			if (pagesArray[page_number].marked == 0){
@@ -60,18 +59,15 @@ void* malloc(uint32 size)
 				startVA = NULL;
 			}
 		}
-		cprintf("First loop finished\n");
 
 		if(freePages < pageNumToAlloc)
 			return NULL;
 
-		cprintf("Second loop\n");
 		for(uint32 i = (uint32) startVA; i < (uint32) startVA + (freePages * PAGE_SIZE) ; i+= PAGE_SIZE){
 			page_number = (i - starti) / PAGE_SIZE;
 			pagesArray[page_number].marked = 1;
 		}
 
-		cprintf("Second loop finished\n");
 		page_number = ((uint32)startVA - starti) / PAGE_SIZE;
 		pagesArray[page_number].returnedVA = startVA;
 		pagesArray[page_number].pagesNum = freePages;

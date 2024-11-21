@@ -139,16 +139,15 @@ void* sys_sbrk(int numOfPages)
 	//TODO: [PROJECT'24.MS2 - #11] [3] USER HEAP - sys_sbrk
 	/*====================================*/
 	/*Remove this line before start coding*/
-	//return (void*)-1 ;
+	return (void*)-1 ;
 	/*====================================*/
+/*
 	struct Env* env = get_cpu_proc(); //the current running Environment to adjust its break limit
 	if(numOfPages<0)
 	{
 	  panic("can't Allocate no. of page with negative value");
 	  return (void*)-1;
 	}
-
-	struct Env* env = get_cpu_proc(); //the current running Environment to adjust its break limit
 
 	if(numOfPages==0)
 	  return (void*)env->seg_break;
@@ -171,7 +170,7 @@ void* sys_sbrk(int numOfPages)
 	free_block(ptr);
 
 	return oldBreak;
-
+*/
 }
 
 //=====================================
