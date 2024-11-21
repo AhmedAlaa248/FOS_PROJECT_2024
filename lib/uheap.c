@@ -90,7 +90,28 @@ void free(void* virtual_address)
 {
 	//TODO: [PROJECT'24.MS2 - #14] [3] USER HEAP [USER SIDE] - free()
 	// Write your code here, remove the panic and write your code
-	panic("free() is not implemented yet...!!");
+//	panic("free() is not implemented yet...!!");
+	if((uint32)virtual_address<myEnv->hard_limit){
+				free_block(virtual_address);
+	}
+	else{
+		uint32 numtobeunmarked = pagesArray[((uint32)virtual_address-(myEnv->hard_limit+PAGE_SIZE))/PAGE_SIZE].pagesNum;
+		uint32 page_number;
+		if (pagesArray[((uint32)virtual_address - (myEnv->hard_limit + PAGE_SIZE)) / PAGE_SIZE].returnedVA != NULL) {
+		for(uint32 i = (uint32) virtual_address; i < (uint32) virtual_address + (numtobeunmarked * PAGE_SIZE) ; i+= PAGE_SIZE){
+					page_number = (i -(myEnv->hard_limit+PAGE_SIZE) ) / PAGE_SIZE;
+					pagesArray[page_number].marked = 0;
+		}
+		sys_free_user_mem((uint32)virtual_address,numtobeunmarked*PAGE_SIZE);
+		page_number = ((uint32)virtual_address - (((myEnv->hard_limit)+PAGE_SIZE))) / PAGE_SIZE;
+		pagesArray[page_number].returnedVA = NULL;
+		pagesArray[page_number].pagesNum = 0;
+		}
+		else{
+			panic("Invalid Memory yacta");
+		}
+
+	}
 }
 
 
