@@ -36,7 +36,7 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 	hStart = daStart;
 	hLimit = daLimit;
 	segmentBr = daStart + initSizeToAllocate;
-
+	//initphysicaltovirtualmap();
 	if (initSizeToAllocate > daLimit) {
 		panic("ya bro the Initial size exceeds the given limit");
 	}

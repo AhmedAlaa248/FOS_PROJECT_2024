@@ -82,6 +82,7 @@ struct Share* create_share(int32 ownerID, char* shareName, uint32 size, uint8 is
 	//TODO: [PROJECT'24.MS2 - #16] [4] SHARED MEMORY - create_share()
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	panic("create_share is not implemented yet");
+
 	//Your Code is Here...
 
 }
@@ -119,12 +120,51 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 //======================
 // [5] Get Share Object:
 //======================
+
 int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 {
 	//TODO: [PROJECT'24.MS2 - #21] [4] SHARED MEMORY [KERNEL SIDE] - getSharedObject()
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("getSharedObject is not implemented yet");
+	//panic("getSharedObject is not implemented yet");
 	//Your Code is Here...
+
+	struct Share *currList=NULL;
+	LIST_FOREACH(currList,&AllShares.shares_list){
+		if(currList->ownerID==ownerID && strcmp(currList->name,shareName)==0)
+		{
+			//found ownerid and name of shared obj
+			break;
+
+		}
+	}
+
+	if(currList==NULL)
+	{
+		//couldn't find shared obj
+		return E_SHARED_MEM_NOT_EXISTS;
+	}
+
+	if(currList->framesStorage==NULL || currList->size==0)
+	{
+		return E_SHARED_MEM_NOT_EXISTS;
+	}
+	for(int i =0; i < currList->size/PAGE_SIZE;i++)
+	{
+		if(currList->framesStorage[i]==NULL)
+		{
+			continue;
+		}
+		int ret = map_frame(ptr_page_directory,currList->framesStorage[i],(uint32)virtual_address,currList->isWritable);
+		if(ret!=0)
+		{
+            cprintf("Error: Failed to map frame %d to virtual address 0x%x\n", i,(uint32)virtual_address);
+		}
+
+		virtual_address+=PAGE_SIZE;
+	}
+	currList->references+=1;
+	return currList->ID;
+
 
 	struct Env* myenv = get_cpu_proc(); //The calling environment
 }

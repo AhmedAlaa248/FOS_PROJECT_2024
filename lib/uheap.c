@@ -126,8 +126,54 @@ void* smalloc(char *sharedVarName, uint32 size, uint8 isWritable)
 	//==============================================================
 	//TODO: [PROJECT'24.MS2 - #18] [4] SHARED MEMORY [USER SIDE] - smalloc()
 	// Write your code here, remove the panic and write your code
-	panic("smalloc() is not implemented yet...!!");
+	//panic("smalloc() is not implemented yet...!!");
+	uint32 numOfAllocatedFrames=0;
+	if(sys_isUHeapPlacementStrategyFIRSTFIT()){
+		uint32 numOfPagesToAlloc = ROUNDUP(size , PAGE_SIZE) / PAGE_SIZE;
+		uint32 startAddr = (uint32)myEnv->hard_limit + PAGE_SIZE ;
+		uint32 pageCounter=0;
+		void* startVAofAllocFrames;
+		uint32 currPage;
+		for(uint32 i =startAddr; i < USER_HEAP_MAX;i+=PAGE_SIZE)
+		{
+			currPage =(i - startAddr) / PAGE_SIZE;
+						if (pagesArray[currPage].marked == 0){
+							if(pageCounter == 0)
+								startVAofAllocFrames =(void*) i;
+
+							pageCounter++;
+							if(pageCounter == numOfPagesToAlloc) break;
+						}else{
+							pageCounter = 0;
+							startVAofAllocFrames = NULL;
+						}
+
+
+		}
+		if(pageCounter < numOfPagesToAlloc)
+		{
+			cprintf("Not Enough Size \n");
+			return NULL;
+		}
+		for(uint32 i = (uint32)startVAofAllocFrames;(uint32) startVAofAllocFrames + (pageCounter * PAGE_SIZE);i+=PAGE_SIZE)
+		{
+			currPage = (i - startAddr) / PAGE_SIZE;
+			pagesArray[currPage].marked = 1;
+		}
+
+
+
+
+		sys_createSharedObject(sharedVarName,size,isWritable,(void*)startVAofAllocFrames);
+		return (void*)startVAofAllocFrames;
+	}
+
+
+
+
+
 	return NULL;
+
 }
 
 //========================================
