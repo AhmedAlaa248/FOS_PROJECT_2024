@@ -199,7 +199,15 @@ void *alloc_block_FF(uint32 size)
 		if(result==(void*)-1)
 			return NULL;
 		else
-			return alloc_block_FF(size);
+		{
+			set_block_data(result,PAGE_SIZE,1);
+			void*temp=(char*)result+PAGE_SIZE-4;
+			uint32* endBlock=(uint32*)temp;
+			*endBlock=1;
+			free_block(result);
+
+			ptr=LIST_LAST(&freeBlocksList);
+		}
 
 	}
 
@@ -226,6 +234,7 @@ void *alloc_block_FF(uint32 size)
 		set_block_data(ptr,size_of_founded_free_block,1);
 		LIST_REMOVE(&freeBlocksList,ptr);
 	}
+
 
 	return (void*) ptr;
 }
