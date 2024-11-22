@@ -66,9 +66,22 @@ inline struct FrameInfo** create_frames_storage(int numOfFrames)
 {
 	//TODO: [PROJECT'24.MS2 - #16] [4] SHARED MEMORY - create_frames_storage()
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("create_frames_storage is not implemented yet");
+	//panic("create_frames_storage is not implemented yet");
 	//Your Code is Here...
+	uint32 size = numOfFrames * sizeof(struct FrameInfo);
+	struct FrameInfo** frames_storage = (struct FrameInfo**) kmalloc(size);
 
+
+    for (int i = 0; i < numOfFrames; i++) {
+        frames_storage[i] = NULL;
+    }
+	if(frames_storage == NULL)
+	{
+		return NULL;
+	}
+	else{
+		return frames_storage;
+	}
 }
 
 //=====================================
@@ -81,9 +94,29 @@ struct Share* create_share(int32 ownerID, char* shareName, uint32 size, uint8 is
 {
 	//TODO: [PROJECT'24.MS2 - #16] [4] SHARED MEMORY - create_share()
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("create_share is not implemented yet");
-
+	//panic("create_share is not implemented yet");
 	//Your Code is Here...
+
+	struct Share * share_obj = (struct Share*) kmalloc(size);
+	share_obj->references = 1;
+	share_obj->isWritable = isWritable;
+	share_obj->ownerID = ownerID;
+	share_obj->size = size;
+	share_obj->ID = (int)share_obj & 0x7FFFFFFF;
+	strncpy(share_obj->name, shareName, sizeof(share_obj->name) - 1);
+	share_obj->name[sizeof(share_obj->name) - 1] = '\0';
+
+	share_obj->framesStorage = create_frames_storage(size/sizeof(struct FrameInfo));
+
+	if (share_obj->framesStorage == NULL) {
+	    //Handle failure and cleanup
+		kfree((uint32*)share_obj);
+		return NULL;
+	}
+
+	LIST_INSERT_TAIL(&AllShares.shares_list, share_obj);
+
+	return share_obj;
 
 }
 
