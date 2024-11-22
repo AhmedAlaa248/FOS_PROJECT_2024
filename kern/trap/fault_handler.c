@@ -154,18 +154,18 @@ void fault_handler(struct Trapframe *tf)
 			int writeable = pt_get_page_permissions(faulted_env->env_page_directory, fault_va);
 			if (writeable & PERM_PRESENT){
 				if((writeable & PERM_WRITEABLE) != PERM_WRITEABLE){
-					cprintf("Read only permission\n");
+//					cprintf("Read only permission\n");
 					env_exit();
 				}
 			}
 			if(fault_va >= USER_LIMIT){
-				cprintf("Above the user limit\n");
+//				cprintf("Above the user limit\n");
 				env_exit();
 			}
 			if((writeable & PERM_AVAILABLE) != PERM_AVAILABLE){
 				if(fault_va >= USER_HEAP_START && fault_va <= USER_HEAP_MAX)
 				{
-					cprintf("unmarked page\n");
+//					cprintf("unmarked page\n");
 					env_exit();
 				}
 			}

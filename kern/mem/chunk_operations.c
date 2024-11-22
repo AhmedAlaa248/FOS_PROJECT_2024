@@ -157,7 +157,8 @@ void* sys_sbrk(int numOfPages)
 		uint32 size =numOfPages*PAGE_SIZE;
 
 		if(env->seg_break+size>env->hard_limit)
-		{cprintf("exceed the hard limit");
+		{
+
 		return (void*)-1;
 		}
 
