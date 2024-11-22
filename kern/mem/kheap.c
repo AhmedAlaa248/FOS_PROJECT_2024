@@ -122,14 +122,9 @@ void* sbrk(int numOfPages)
 	 }
 
 	 void *oldBreak=(void*)segmentBr;
-	 void*ptr=(void*)segmentBr;
-	 set_block_data(ptr,size,1);
+
 	 segmentBr+=size;
 
-	 uint32 *newEndBlock=(uint32*)segmentBr-1;
-	 *newEndBlock=1;
-
-	 free_block(ptr);
 
 	 return oldBreak;
 }
