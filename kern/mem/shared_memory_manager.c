@@ -221,8 +221,17 @@ void free_share(struct Share* ptrShare)
 {
 	//TODO: [PROJECT'24.MS2 - BONUS#4] [4] SHARED MEMORY [KERNEL SIDE] - free_share()
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("free_share is not implemented yet");
+	//panic("free_share is not implemented yet");
 	//Your Code is Here...
+	struct Share * checkshare;
+	LIST_FOREACH(checkshare, &(AllShares.shares_list)){
+			if(checkshare == ptrShare){
+				LIST_REMOVE(&(AllShares.shares_list), ptrShare);
+			}
+		}
+	kfree((int*)ptrShare->framesStorage);
+	kfree((int*)ptrShare);
+
 
 }
 //========================
