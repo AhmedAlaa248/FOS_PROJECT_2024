@@ -127,10 +127,19 @@ void* smalloc(char *sharedVarName, uint32 size, uint8 isWritable)
 	//TODO: [PROJECT'24.MS2 - #18] [4] SHARED MEMORY [USER SIDE] - smalloc()
 	// Write your code here, remove the panic and write your code
 	//panic("smalloc() is not implemented yet...!!");
-	uint32 numOfAllocatedFrames=0;
-	if(sys_isUHeapPlacementStrategyFIRSTFIT()){
+		if(size == 0)
+			return NULL;
+		uint32 pagealloc_start = USER_HEAP_START + DYN_ALLOC_MAX_SIZE + PAGE_SIZE;
+		if(size > USER_HEAP_MAX - pagealloc_start - PAGE_SIZE)
+		{
+			cprintf("Size is bigger than the user heap");
+			return NULL;
+		}
+		if(sys_isUHeapPlacementStrategyFIRSTFIT()){
+		cprintf("smalloc started \n");
+		uint32 numOfAllocatedFrames=0;
 		uint32 numOfPagesToAlloc = ROUNDUP(size , PAGE_SIZE) / PAGE_SIZE;
-		uint32 startAddr = (uint32)myEnv->hard_limit + PAGE_SIZE ;
+		uint32 startAddr = pagealloc_start;
 		uint32 pageCounter=0;
 		void* startVAofAllocFrames;
 		uint32 currPage;
@@ -138,24 +147,26 @@ void* smalloc(char *sharedVarName, uint32 size, uint8 isWritable)
 		{
 			currPage =(i - startAddr) / PAGE_SIZE;
 						if (pagesArray[currPage].marked == 0){
-							if(pageCounter == 0)
+							if(pageCounter == 0){
 								startVAofAllocFrames =(void*) i;
-
+							}
 							pageCounter++;
-							if(pageCounter == numOfPagesToAlloc) break;
-						}else{
+							if(pageCounter == numOfPagesToAlloc)
+								break;
+							}
+						else{
 							pageCounter = 0;
 							startVAofAllocFrames = NULL;
 						}
 
 
 		}
-		if(pageCounter < numOfPagesToAlloc)
+		if(pageCounter < numOfPagesToAlloc || startVAofAllocFrames==NULL)
 		{
 			cprintf("Not Enough Size \n");
 			return NULL;
 		}
-		for(uint32 i = (uint32)startVAofAllocFrames;(uint32) startVAofAllocFrames + (pageCounter * PAGE_SIZE);i+=PAGE_SIZE)
+		for(uint32 i = (uint32)startVAofAllocFrames;i < (uint32) startVAofAllocFrames + (pageCounter * PAGE_SIZE);i+=PAGE_SIZE)
 		{
 			currPage = (i - startAddr) / PAGE_SIZE;
 			pagesArray[currPage].marked = 1;
@@ -164,11 +175,10 @@ void* smalloc(char *sharedVarName, uint32 size, uint8 isWritable)
 
 
 
-		sys_createSharedObject(sharedVarName,size,isWritable,(void*)startVAofAllocFrames);
+		int ret = sys_createSharedObject(sharedVarName,size,isWritable,(void*)startVAofAllocFrames);
 		return (void*)startVAofAllocFrames;
-	}
 
-
+}
 
 
 

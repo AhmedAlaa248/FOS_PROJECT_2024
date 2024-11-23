@@ -32,9 +32,12 @@ _main(void)
 
 	cprintf("STEP A: checking the creation of shared variables... [60%]\n");
 	{
+
 		is_correct = 1;
 		int freeFrames = sys_calculate_free_frames() ;
+		cprintf("Did this even enter? /n");
 		x = smalloc("x", PAGE_SIZE, 1);
+		cprintf("First malloc");
 		if (x != (uint32*)pagealloc_start) {is_correct = 0; cprintf("Returned address is not correct. check the setting of it and/or the updating of the shared_mem_free_address");}
 		expected = 1+1 ; /*1page +1table*/
 		int diff = (freeFrames - sys_calculate_free_frames());
@@ -44,6 +47,8 @@ _main(void)
 		is_correct = 1;
 		freeFrames = sys_calculate_free_frames() ;
 		z = smalloc("z", PAGE_SIZE + 4, 1);
+		cprintf("2nd malloc");
+
 		if (z != (uint32*)(pagealloc_start + 1 * PAGE_SIZE)) {is_correct = 0; cprintf("Returned address is not correct. check the setting of it and/or the updating of the shared_mem_free_address");}
 		expected = 2 ; /*2pages*/
 		diff = (freeFrames - sys_calculate_free_frames());
@@ -53,6 +58,8 @@ _main(void)
 		is_correct = 1;
 		freeFrames = sys_calculate_free_frames() ;
 		y = smalloc("y", 4, 1);
+		cprintf("3rd malloc");
+
 		if (y != (uint32*)(pagealloc_start + 3 * PAGE_SIZE)) {is_correct = 0; cprintf("Returned address is not correct. check the setting of it and/or the updating of the shared_mem_free_address");}
 		expected = 1 ; /*1page*/
 		diff = (freeFrames - sys_calculate_free_frames());
