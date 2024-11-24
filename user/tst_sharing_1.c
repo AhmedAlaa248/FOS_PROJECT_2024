@@ -74,7 +74,6 @@ _main(void)
 		int i=0;
 		for(;i<PAGE_SIZE/4;i++)
 		{
-			cprintf("%d: In\n", i);
 			x[i] = -1;
 			y[i] = -1;
 		}

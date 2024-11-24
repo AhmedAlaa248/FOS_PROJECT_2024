@@ -181,9 +181,9 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
    }
 
    for (int i=0;i<numOfFrames;i++){
-       pt_set_page_permissions(myenv->env_page_directory,firstFrame,PERM_WRITEABLE,0);
-       pt_set_page_permissions(myenv->env_page_directory,firstFrame,PERM_USER,0);
        pt_set_page_permissions(myenv->env_page_directory,firstFrame,PERM_AVAILABLE,0);
+       pt_set_page_permissions(myenv->env_page_directory,firstFrame,PERM_USER,0);
+       pt_set_page_permissions(myenv->env_page_directory,firstFrame,PERM_WRITEABLE,0);
 
        struct FrameInfo* frame=get_frame_info(myenv->env_page_directory,firstFrame,&ptr_page_table);
        sharedObject->framesStorage[i]=frame;
