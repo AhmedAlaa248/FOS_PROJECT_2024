@@ -96,26 +96,37 @@ struct Share* create_share(int32 ownerID, char* shareName, uint32 size, uint8 is
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("create_share is not implemented yet");
 	//Your Code is Here...
-	struct Share* sharedObj=NULL;
-	 sharedObj = (struct Share*) kmalloc(sizeof(struct Share));
-	    if(sharedObj==NULL)
-	    	return NULL;
-	    sharedObj->ownerID=ownerID;
-	    strcpy(sharedObj->name, shareName);
-	    cprintf("el share obj name %s w el shareName %s \n",sharedObj->name,shareName);
-	    sharedObj->size=size;
-	    sharedObj->isWritable=isWritable;
-	    sharedObj->ID=((uint32)sharedObj) & 0x7FFFFFFF;
-	unsigned int  numOfFrames=(unsigned int )((size+PAGE_SIZE-1)/PAGE_SIZE);
-	struct FrameInfo** frames_storage = create_frames_storage(numOfFrames);
-	if(frames_storage==NULL)
+	uint32 structSize = sizeof(struct Share);
+	structSize=ROUNDUP(structSize,PAGE_SIZE);
+	struct Share * share_obj = (struct Share*) kmalloc(structSize);
+	if(share_obj ==NULL)
 	{
-		kfree(sharedObj);
-	    return NULL;
-		}
-	sharedObj->references+=1;
-	sharedObj->framesStorage=frames_storage;
-	return sharedObj;
+		return NULL;
+	}
+	share_obj->references = 1;
+	share_obj->isWritable = isWritable;
+	share_obj->ownerID = ownerID;
+	share_obj->size = size;
+	share_obj->ID = (int)share_obj & 0x7FFFFFFF;
+	strcpy(share_obj->name, shareName);
+//	cprintf("el share obj name %s w el shareName %s \",share_obj->name,shareName);
+
+
+	int numOfFrames =ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
+
+
+	share_obj->framesStorage = create_frames_storage(numOfFrames);
+
+
+	if (share_obj->framesStorage == NULL) {
+
+		kfree((uint32*)share_obj);
+		return NULL;
+	}
+
+
+
+	return share_obj;
 
 }
 
@@ -182,7 +193,7 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
    			return E_NO_SHARE;
              //panic("mfesh memory ya zmely");
    		}
-   		if(   map_frame(myenv->env_page_directory,newframe,i,PERM_AVAILABLE|PERM_USER|PERM_WRITEABLE)!=0)
+   		if(   map_frame(myenv->env_page_directory,newframe,i,PERM_AVAILABLE|PERM_WRITEABLE)!=0)
    		   		{
    		   			return E_NO_SHARE;
    		            //  panic("mfesh memory ya zmely");
