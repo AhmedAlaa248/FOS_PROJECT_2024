@@ -69,6 +69,7 @@ inline struct FrameInfo** create_frames_storage(int numOfFrames)
 	//panic("create_frames_storage is not implemented yet");
 	//Your Code is Here...
 	uint32 size = numOfFrames * sizeof(struct FrameInfo);
+//	size = ROUNDUP(size,PAGE_SIZE);
 	struct FrameInfo** frames_storage = (struct FrameInfo**) kmalloc(size);
 
 	if(frames_storage == NULL)
@@ -95,34 +96,26 @@ struct Share* create_share(int32 ownerID, char* shareName, uint32 size, uint8 is
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("create_share is not implemented yet");
 	//Your Code is Here...
-	uint32 structSize = sizeof(struct Share*);
-	struct Share * share_obj = (struct Share*) kmalloc(structSize);
-	share_obj->references = 1;
-	share_obj->isWritable = isWritable;
-	share_obj->ownerID = ownerID;
-	share_obj->size = size;
-	share_obj->ID = (int)share_obj & 0x7FFFFFFF;
-	strncpy(share_obj->name, shareName, sizeof(share_obj->name) - 1);
-	share_obj->name[sizeof(share_obj->name) - 1] = '\0';
-
-
-	int numOfFrames =ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
-
-    share_obj->framesStorage = create_frames_storage(numOfFrames);
-
-
-
-	if (share_obj->framesStorage == NULL) {
-	    //Handle failure and cleanup
-		kfree((uint32*)share_obj);
-		return NULL;
-	}
-
-
-
-	//LIST_INSERT_TAIL(&AllShares.shares_list, share_obj);
-
-	return share_obj;
+	struct Share* sharedObj=NULL;
+	 sharedObj = (struct Share*) kmalloc(sizeof(struct Share));
+	    if(sharedObj==NULL)
+	    	return NULL;
+	    sharedObj->ownerID=ownerID;
+	    strcpy(sharedObj->name, shareName);
+	    cprintf("el share obj name %s w el shareName %s \n",sharedObj->name,shareName);
+	    sharedObj->size=size;
+	    sharedObj->isWritable=isWritable;
+	    sharedObj->ID=((uint32)sharedObj) & 0x7FFFFFFF;
+	unsigned int  numOfFrames=(unsigned int )((size+PAGE_SIZE-1)/PAGE_SIZE);
+	struct FrameInfo** frames_storage = create_frames_storage(numOfFrames);
+	if(frames_storage==NULL)
+	{
+		kfree(sharedObj);
+	    return NULL;
+		}
+	sharedObj->references+=1;
+	sharedObj->framesStorage=frames_storage;
+	return sharedObj;
 
 }
 
@@ -140,12 +133,19 @@ struct Share* get_share(int32 ownerID, char* name)
 	//panic("get_share is not implemented yet");
 	//Your Code is Here...
 	struct Share * findshare;
+	acquire_spinlock(&AllShares.shareslock);
+
+
 	LIST_FOREACH(findshare, &(AllShares.shares_list)){
-		if(findshare->ownerID == ownerID && findshare->name == name){
+		if(findshare->ownerID == ownerID && strcmp( findshare->name , name)==0){
+			release_spinlock(&AllShares.shareslock);
 			return findshare;
 		}
 	}
+	release_spinlock(&AllShares.shareslock);
 	return NULL;
+
+
 }
 
 //=========================
@@ -164,33 +164,58 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
     uint32* ptr_page_table;
 
 
-   if(get_share(ownerID,shareName)!=NULL){
+    if(get_share(ownerID,shareName)!=NULL){
 
            return E_SHARED_MEM_EXISTS;
     }
 
    struct Share* sharedObject = create_share(ownerID,shareName,size,isWritable);
-  // create_frames_storage(numOfFrames);
-   LIST_INSERT_TAIL(&AllShares.shares_list,sharedObject);
+
+
+
+     uint32 pcount=0;
+   	 size = ROUNDUP(size,PAGE_SIZE);
+   	 for (uint32 i = (uint32)virtual_address ;i < (uint32)virtual_address + size ; i+=PAGE_SIZE ){
+   		   struct FrameInfo * newframe;
+   		if(   allocate_frame(&newframe)!=0)
+   		{
+   			return E_NO_SHARE;
+             //panic("mfesh memory ya zmely");
+   		}
+   		if(   map_frame(myenv->env_page_directory,newframe,i,PERM_AVAILABLE|PERM_USER|PERM_WRITEABLE)!=0)
+   		   		{
+   		   			return E_NO_SHARE;
+   		            //  panic("mfesh memory ya zmely");
+   		   		}
+
+   		sharedObject->framesStorage[pcount]=newframe;
+   		pcount++;
+   	 }
+   	   acquire_spinlock(&AllShares.shareslock);
+   	   LIST_INSERT_TAIL(&AllShares.shares_list,sharedObject);
+   	   release_spinlock(&AllShares.shareslock);
+   	return sharedObject->ID;
+//   struct FrameInfo * newframe;
+//   allocate_frame(&newframe)
    //struct FrameInfo** frames_storage = create_frames_storage(numOfFrames);
-   uint32 firstFrame =(uint32)kmalloc(size);
+//   uint32 firstFrame =(uint32)kmalloc(size);
+//
+//   if(firstFrame == 0)
+//   {
+//       return E_NO_SHARE;
+//   }
+//
+//   for (int i=0;i<numOfFrames;i++){
+////       pt_set_page_permissions(myenv->env_page_directory,firstFrame,PERM_AVAILABLE,0);
+////       pt_set_page_permissions(myenv->env_page_directory,firstFrame,PERM_USER,0);
+////       pt_set_page_permissions(myenv->env_page_directory,firstFrame,PERM_WRITEABLE,0);
+//
+//       struct FrameInfo* frame=get_frame_info(myenv->env_page_directory,firstFrame,&ptr_page_table);
+//       sharedObject->framesStorage[i]=frame;
+//       firstFrame+=PAGE_SIZE;
+//     }
 
-   if(firstFrame == 0)
-   {
-       return E_NO_SHARE;
-   }
 
-   for (int i=0;i<numOfFrames;i++){
-       pt_set_page_permissions(myenv->env_page_directory,firstFrame,PERM_AVAILABLE,0);
-       pt_set_page_permissions(myenv->env_page_directory,firstFrame,PERM_USER,0);
-       pt_set_page_permissions(myenv->env_page_directory,firstFrame,PERM_WRITEABLE,0);
-
-       struct FrameInfo* frame=get_frame_info(myenv->env_page_directory,firstFrame,&ptr_page_table);
-       sharedObject->framesStorage[i]=frame;
-       firstFrame+=PAGE_SIZE;
-     }
-
-   return sharedObject->ID;
 
 }
 

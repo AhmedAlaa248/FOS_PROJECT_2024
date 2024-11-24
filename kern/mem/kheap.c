@@ -142,8 +142,10 @@ void* kmalloc(unsigned int size)
 	if (size == 0)
 		return NULL;
 
-	if (size <= DYN_ALLOC_MAX_BLOCK_SIZE)
+	if (size <= DYN_ALLOC_MAX_BLOCK_SIZE){
+//		cprintf("keda nta 8alat \n");
 		return alloc_block_FF(size);
+	}
 
 	uint32 numPages = (ROUNDUP(size, PAGE_SIZE)) / PAGE_SIZE;
 	uint32 contiguous_pages = 0;
