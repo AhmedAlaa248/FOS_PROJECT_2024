@@ -35,29 +35,23 @@ _main(void)
 
 		is_correct = 1;
 		int freeFrames = sys_calculate_free_frames() ;
-		cprintf("free frames before 1st smalloc %d\n",freeFrames);
 		cprintf("Did this even enter? /n");
 		x = smalloc("x", PAGE_SIZE, 1);
 		cprintf("First malloc");
 		if (x != (uint32*)pagealloc_start) {is_correct = 0; cprintf("Returned address is not correct. check the setting of it and/or the updating of the shared_mem_free_address");}
 		expected = 1+1 ; /*1page +1table*/
 		int diff = (freeFrames - sys_calculate_free_frames());
-		cprintf("diff %d\n",diff);
-		cprintf("sys calc free frames %d\n",sys_calculate_free_frames());
 		if (diff < expected || diff > expected +1+1 /*extra 1 page & 1 table for sbrk (at max)*/) {is_correct = 0; cprintf("Wrong allocation (current=%d, expected=%d): make sure that you allocate the required space in the user environment and add its frames to frames_storage", freeFrames - sys_calculate_free_frames(), expected);}
 		if (is_correct) eval += 20 ;
 
 		is_correct = 1;
 		freeFrames = sys_calculate_free_frames() ;
-		cprintf("free frames after 1st smalloc %d\n",freeFrames);
 		z = smalloc("z", PAGE_SIZE + 4, 1);
 		cprintf("2nd malloc");
 
 		if (z != (uint32*)(pagealloc_start + 1 * PAGE_SIZE)) {is_correct = 0; cprintf("Returned address is not correct. check the setting of it and/or the updating of the shared_mem_free_address");}
 		expected = 2 ; /*2pages*/
 		diff = (freeFrames - sys_calculate_free_frames());
-		cprintf("diff %d\n",diff);
-				cprintf("sys calc free frames %d\n",sys_calculate_free_frames());
 		if (diff < expected || diff > expected +1+1 /*extra 1 page & 1 table for sbrk (at max)*/) {is_correct = 0; cprintf("Wrong allocation (current=%d, expected=%d): make sure that you allocate the required space in the user environment and add its frames to frames_storage", freeFrames - sys_calculate_free_frames(), expected);}
 		if (is_correct) eval += 20 ;
 
@@ -80,10 +74,11 @@ _main(void)
 		int i=0;
 		for(;i<PAGE_SIZE/4;i++)
 		{
+			cprintf("%d: In\n", i);
 			x[i] = -1;
 			y[i] = -1;
 		}
-
+		cprintf("out\n");
 		i=0;
 		for(;i<2*PAGE_SIZE/4;i++)
 		{
