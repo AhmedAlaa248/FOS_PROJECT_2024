@@ -38,42 +38,12 @@ void* malloc(uint32 size)
 
 	if(sys_isUHeapPlacementStrategyFIRSTFIT()){
 
-		uint32 pageNumToAlloc = ROUNDUP(size , PAGE_SIZE) / PAGE_SIZE;
-		uint32 freePages = 0;
-		uint32 starti = (uint32) myEnv->hard_limit + PAGE_SIZE;
-
-		void *startVA = (void *)starti;
-		uint32 *ptr_page_table = NULL;
-		uint32 page_number ;
-
-		for (uint32 i = starti; i < USER_HEAP_MAX; i += PAGE_SIZE){
-			page_number =(i - starti) / PAGE_SIZE;
-			if (pagesArray[page_number].marked == 0){
-				if(freePages == 0)
-					startVA =(void*) i;
-
-				freePages++;
-				if(freePages == pageNumToAlloc) break;
-			}else{
-				freePages = 0;
-				startVA = NULL;
-			}
+		void* startVA = applyingFFStrategy(size);
+		if(startVA != NULL)
+		{
+			sys_allocate_user_mem((uint32)startVA, ROUNDUP(size , PAGE_SIZE));
+			return startVA;
 		}
-
-		if(freePages < pageNumToAlloc)
-			return NULL;
-
-		for(uint32 i = (uint32) startVA; i < (uint32) startVA + (freePages * PAGE_SIZE) ; i+= PAGE_SIZE){
-			page_number = (i - starti) / PAGE_SIZE;
-			pagesArray[page_number].marked = 1;
-		}
-
-		page_number = ((uint32)startVA - starti) / PAGE_SIZE;
-		pagesArray[page_number].returnedVA = startVA;
-		pagesArray[page_number].pagesNum = freePages;
-
-		sys_allocate_user_mem((uint32)startVA, pageNumToAlloc * PAGE_SIZE);
-		return startVA;
 
 	}
 
@@ -136,45 +106,15 @@ void* smalloc(char *sharedVarName, uint32 size, uint8 isWritable)
 
 	if(sys_isUHeapPlacementStrategyFIRSTFIT()){
 
-		uint32 pageNumToAlloc = ROUNDUP(size , PAGE_SIZE) / PAGE_SIZE;
-		uint32 freePages = 0;
-		uint32 starti = (uint32) myEnv->hard_limit + PAGE_SIZE;
+		void * startVA = applyingFFStrategy(size);
 
-		void *startVA = (void *)starti;
-		uint32 *ptr_page_table = NULL;
-		uint32 page_number ;
+		if(startVA != NULL){
+			int res = sys_createSharedObject(sharedVarName, size, isWritable, startVA);
+			if (res == E_SHARED_MEM_EXISTS || res == E_NO_SHARE)
+				return NULL;
 
-		for (uint32 i = starti; i < USER_HEAP_MAX; i += PAGE_SIZE){
-			page_number =(i - starti) / PAGE_SIZE;
-			if (pagesArray[page_number].marked == 0){
-				if(freePages == 0)
-					startVA =(void*) i;
-
-				freePages++;
-				if(freePages == pageNumToAlloc) break;
-			}else{
-				freePages = 0;
-				startVA = NULL;
-			}
+			return startVA;
 		}
-
-		if(freePages < pageNumToAlloc)
-			return NULL;
-
-		for(uint32 i = (uint32) startVA; i < (uint32) startVA + (freePages * PAGE_SIZE) ; i+= PAGE_SIZE){
-			page_number = (i - starti) / PAGE_SIZE;
-			pagesArray[page_number].marked = 1;
-		}
-
-		page_number = ((uint32)startVA - starti) / PAGE_SIZE;
-		pagesArray[page_number].returnedVA = startVA;
-		pagesArray[page_number].pagesNum = freePages;
-
-		int res = sys_createSharedObject(sharedVarName, size, isWritable, startVA);
-		if (res == E_SHARED_MEM_EXISTS || res == E_NO_SHARE)
-			return NULL;
-
-		return startVA;
 	}
 
 	return NULL;
@@ -187,10 +127,63 @@ void* sget(int32 ownerEnvID, char *sharedVarName)
 {
 	//TODO: [PROJECT'24.MS2 - #20] [4] SHARED MEMORY [USER SIDE] - sget()
 	// Write your code here, remove the panic and write your code
-//	panic("sget() is not implemented yet...!!");
+	// panic("sget() is not implemented yet...!!");
+
+
+	uint32 size = sys_getSizeOfSharedObject(ownerEnvID, sharedVarName);
+	if (size == 0 || size == E_SHARED_MEM_NOT_EXISTS)	return NULL;
+
+	if (sys_isUHeapPlacementStrategyFIRSTFIT()){
+		void * startVA = applyingFFStrategy(size);
+
+		if(startVA == NULL)	return NULL;
+
+		int ret = sys_getSharedObject(ownerEnvID, sharedVarName, startVA);
+		if(ret != E_SHARED_MEM_NOT_EXISTS) return startVA;
+	}
+
+
 	return NULL;
 }
 
+void* applyingFFStrategy(uint32 size){
+
+	uint32 pageNumToAlloc = ROUNDUP(size , PAGE_SIZE) / PAGE_SIZE;
+	uint32 freePages = 0;
+	uint32 starti = (uint32) myEnv->hard_limit + PAGE_SIZE;
+
+	void *startVA = (void *)starti;
+	uint32 *ptr_page_table = NULL;
+	uint32 page_number ;
+
+	for (uint32 i = starti; i < USER_HEAP_MAX; i += PAGE_SIZE){
+		page_number =(i - starti) / PAGE_SIZE;
+		if (pagesArray[page_number].marked == 0){
+			if(freePages == 0)
+				startVA =(void*) i;
+
+			freePages++;
+			if(freePages == pageNumToAlloc) break;
+		}else{
+			freePages = 0;
+			startVA = NULL;
+		}
+	}
+
+	if(freePages < pageNumToAlloc)
+		return NULL;
+
+	for(uint32 i = (uint32) startVA; i < (uint32) startVA + (freePages * PAGE_SIZE) ; i+= PAGE_SIZE){
+		page_number = (i - starti) / PAGE_SIZE;
+		pagesArray[page_number].marked = 1;
+	}
+
+	page_number = ((uint32)startVA - starti) / PAGE_SIZE;
+	pagesArray[page_number].returnedVA = startVA;
+	pagesArray[page_number].pagesNum = freePages;
+
+	return startVA;
+}
 
 //==================================================================================//
 //============================== BONUS FUNCTIONS ===================================//

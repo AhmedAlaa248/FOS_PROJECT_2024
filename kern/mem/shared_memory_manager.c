@@ -170,7 +170,7 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 		struct FrameInfo * newframe;
 		if(allocate_frame(&newframe) != 0)	return E_NO_SHARE;
 
-		if(map_frame(myenv->env_page_directory, newframe, i, PERM_AVAILABLE|PERM_USER|PERM_WRITEABLE) != 0)
+		if(map_frame(myenv->env_page_directory, newframe, i, PERM_MARKED|PERM_USER|PERM_WRITEABLE) != 0)
 			return E_NO_SHARE;
 
 		sharedObject->framesStorage[pcount] = newframe;
@@ -196,43 +196,27 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 	//Your Code is Here...
 	struct Env* myenv = get_cpu_proc(); //The calling environment
 
-	struct Share *currList=NULL;
-	LIST_FOREACH(currList,&AllShares.shares_list){
-		if(currList->ownerID==ownerID && strcmp(currList->name,shareName)==0)
-		{
-			//found ownerid and name of shared obj
-			break;
+	struct Share * current_obj = get_share(ownerID, shareName);
 
-		}
+	if(current_obj == NULL)	return E_SHARED_MEM_NOT_EXISTS;
+
+	int perm = (current_obj->isWritable)? (PERM_MARKED|PERM_USER|PERM_WRITEABLE) : (PERM_MARKED|PERM_USER);
+
+	uint32 framesNum = ROUNDUP(current_obj->size, PAGE_SIZE);
+
+
+	for (uint32 i = 0; i < framesNum; i++){
+		//Won't we update frameInfo refrences ?
+		int ret = map_frame(myenv->env_page_directory, current_obj->framesStorage[i], (uint32)virtual_address, perm);
+
+		if (ret != 0) cprintf("Error: Failed to map frame %d to virtual address 0x%x\n", i,(uint32)virtual_address);
+
+		virtual_address += PAGE_SIZE;
 	}
 
-	if(currList==NULL)
-	{
-		//couldn't find shared obj
-		return E_SHARED_MEM_NOT_EXISTS;
-	}
+	current_obj->references ++;
 
-	if(currList->framesStorage==NULL || currList->size==0)
-	{
-		return E_SHARED_MEM_NOT_EXISTS;
-	}
-	for(int i =0; i < currList->size/PAGE_SIZE;i++)
-	{
-		if(currList->framesStorage[i]==NULL)
-		{
-			continue;
-		}
-		int ret = map_frame(myenv->env_page_directory,currList->framesStorage[i],(uint32)virtual_address,currList->isWritable);
-		if(ret!=0)
-		{
-            cprintf("Error: Failed to map frame %d to virtual address 0x%x\n", i,(uint32)virtual_address);
-		}
-
-		virtual_address+=PAGE_SIZE;
-	}
-	currList->references+=1;
-	return currList->ID;
-
+	return current_obj->ID;
 
 }
 
