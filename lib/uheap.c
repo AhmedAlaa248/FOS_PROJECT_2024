@@ -90,7 +90,7 @@ void free(void* virtual_address)
 {
 	//TODO: [PROJECT'24.MS2 - #14] [3] USER HEAP [USER SIDE] - free()
 	// Write your code here, remove the panic and write your code
-//	panic("free() is not implemented yet...!!");
+	//	panic("free() is not implemented yet...!!");
 	if((uint32)virtual_address<myEnv->hard_limit){
 				free_block(virtual_address);
 	}
@@ -127,63 +127,57 @@ void* smalloc(char *sharedVarName, uint32 size, uint8 isWritable)
 	//TODO: [PROJECT'24.MS2 - #18] [4] SHARED MEMORY [USER SIDE] - smalloc()
 	// Write your code here, remove the panic and write your code
 	//panic("smalloc() is not implemented yet...!!");
-		if(size == 0)
+
+	//	if(size > USER_HEAP_MAX - pagealloc_start - PAGE_SIZE)
+	//	{
+	//		cprintf("Size is bigger than the user heap");
+	//		return NULL;
+	//	}
+
+	if(sys_isUHeapPlacementStrategyFIRSTFIT()){
+
+		uint32 pageNumToAlloc = ROUNDUP(size , PAGE_SIZE) / PAGE_SIZE;
+		uint32 freePages = 0;
+		uint32 starti = (uint32) myEnv->hard_limit + PAGE_SIZE;
+
+		void *startVA = (void *)starti;
+		uint32 *ptr_page_table = NULL;
+		uint32 page_number ;
+
+		for (uint32 i = starti; i < USER_HEAP_MAX; i += PAGE_SIZE){
+			page_number =(i - starti) / PAGE_SIZE;
+			if (pagesArray[page_number].marked == 0){
+				if(freePages == 0)
+					startVA =(void*) i;
+
+				freePages++;
+				if(freePages == pageNumToAlloc) break;
+			}else{
+				freePages = 0;
+				startVA = NULL;
+			}
+		}
+
+		if(freePages < pageNumToAlloc)
 			return NULL;
-		uint32 pagealloc_start = USER_HEAP_START + DYN_ALLOC_MAX_SIZE + PAGE_SIZE;
-		if(size > USER_HEAP_MAX - pagealloc_start - PAGE_SIZE)
-		{
-			cprintf("Size is bigger than the user heap");
+
+		for(uint32 i = (uint32) startVA; i < (uint32) startVA + (freePages * PAGE_SIZE) ; i+= PAGE_SIZE){
+			page_number = (i - starti) / PAGE_SIZE;
+			pagesArray[page_number].marked = 1;
+		}
+
+		page_number = ((uint32)startVA - starti) / PAGE_SIZE;
+		pagesArray[page_number].returnedVA = startVA;
+		pagesArray[page_number].pagesNum = freePages;
+
+		int res = sys_createSharedObject(sharedVarName, size, isWritable, startVA);
+		if (res == E_SHARED_MEM_EXISTS || res == E_NO_SHARE)
 			return NULL;
-		}
-		if(sys_isUHeapPlacementStrategyFIRSTFIT()){
-		cprintf("smalloc started \n");
-		uint32 numOfAllocatedFrames=0;
-		uint32 numOfPagesToAlloc = ROUNDUP(size , PAGE_SIZE) / PAGE_SIZE;
-		uint32 startAddr = pagealloc_start;
-		uint32 pageCounter=0;
-		void* startVAofAllocFrames;
-		uint32 currPage;
-		for(uint32 i =startAddr; i < USER_HEAP_MAX;i+=PAGE_SIZE)
-		{
-			currPage =(i - startAddr) / PAGE_SIZE;
-						if (pagesArray[currPage].marked == 0){
-							if(pageCounter == 0){
-								startVAofAllocFrames =(void*) i;
-							}
-							pageCounter++;
-							if(pageCounter == numOfPagesToAlloc)
-								break;
-							}
-						else{
-							pageCounter = 0;
-							startVAofAllocFrames = NULL;
-						}
 
-
-		}
-		if(pageCounter < numOfPagesToAlloc || startVAofAllocFrames==NULL)
-		{
-			cprintf("Not Enough Size \n");
-			return NULL;
-		}
-		for(uint32 i = (uint32)startVAofAllocFrames;i < (uint32) startVAofAllocFrames + (pageCounter * PAGE_SIZE);i+=PAGE_SIZE)
-		{
-			currPage = (i - startAddr) / PAGE_SIZE;
-			pagesArray[currPage].marked = 1;
-		}
-
-
-
-
-		int ret = sys_createSharedObject(sharedVarName,size,isWritable,(void*)startVAofAllocFrames);
-		return (void*)startVAofAllocFrames;
-
-}
-
-
+		return startVA;
+	}
 
 	return NULL;
-
 }
 
 //========================================
@@ -193,7 +187,7 @@ void* sget(int32 ownerEnvID, char *sharedVarName)
 {
 	//TODO: [PROJECT'24.MS2 - #20] [4] SHARED MEMORY [USER SIDE] - sget()
 	// Write your code here, remove the panic and write your code
-	panic("sget() is not implemented yet...!!");
+//	panic("sget() is not implemented yet...!!");
 	return NULL;
 }
 

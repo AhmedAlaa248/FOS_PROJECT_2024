@@ -69,19 +69,16 @@ inline struct FrameInfo** create_frames_storage(int numOfFrames)
 	//panic("create_frames_storage is not implemented yet");
 	//Your Code is Here...
 	uint32 size = numOfFrames * sizeof(struct FrameInfo);
+
 	struct FrameInfo** frames_storage = (struct FrameInfo**) kmalloc(size);
 
-
-    for (int i = 0; i < numOfFrames; i++) {
-        frames_storage[i] = NULL;
-    }
 	if(frames_storage == NULL)
-	{
 		return NULL;
-	}
-	else{
-		return frames_storage;
-	}
+
+    for (int i = 0; i < numOfFrames; i++)
+        frames_storage[i] = 0;
+
+	return frames_storage;
 }
 
 //=====================================
@@ -96,28 +93,29 @@ struct Share* create_share(int32 ownerID, char* shareName, uint32 size, uint8 is
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("create_share is not implemented yet");
 	//Your Code is Here...
+	uint32 structSize = sizeof(struct Share);
+	structSize=ROUNDUP(structSize,PAGE_SIZE);
+	struct Share * share_obj = (struct Share*) kmalloc(structSize);
 
-	struct Share * share_obj = (struct Share*) kmalloc(size);
+	if(share_obj == NULL)
+		return NULL;
+
+	share_obj->ID = (int)share_obj & 0x7FFFFFFF;
+	share_obj->ownerID = ownerID;
+	strcpy(share_obj->name, shareName);
+	share_obj->size = size;
 	share_obj->references = 1;
 	share_obj->isWritable = isWritable;
-	share_obj->ownerID = ownerID;
-	share_obj->size = size;
-	share_obj->ID = (int)share_obj & 0x7FFFFFFF;
-	strncpy(share_obj->name, shareName, sizeof(share_obj->name) - 1);
-	share_obj->name[sizeof(share_obj->name) - 1] = '\0';
 
-	share_obj->framesStorage = create_frames_storage(size/sizeof(struct FrameInfo));
+	int numOfFrames = ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
+	share_obj->framesStorage = create_frames_storage(numOfFrames);
 
 	if (share_obj->framesStorage == NULL) {
-	    //Handle failure and cleanup
 		kfree((uint32*)share_obj);
 		return NULL;
 	}
 
-	LIST_INSERT_TAIL(&AllShares.shares_list, share_obj);
-
 	return share_obj;
-
 }
 
 //=============================
@@ -133,12 +131,17 @@ struct Share* get_share(int32 ownerID, char* name)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("get_share is not implemented yet");
 	//Your Code is Here...
+
 	struct Share * findshare;
+	acquire_spinlock(&AllShares.shareslock);
 	LIST_FOREACH(findshare, &(AllShares.shares_list)){
-		if(findshare->ownerID == ownerID && findshare->name == name){
+		if(findshare->ownerID == ownerID
+		&& strcmp(findshare->name, name) == 0){
+			release_spinlock(&AllShares.shareslock);
 			return findshare;
 		}
 	}
+	release_spinlock(&AllShares.shareslock);
 	return NULL;
 }
 
@@ -148,13 +151,38 @@ struct Share* get_share(int32 ownerID, char* name)
 int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWritable, void* virtual_address)
 {
 	//TODO: [PROJECT'24.MS2 - #19] [4] SHARED MEMORY [KERNEL SIDE] - createSharedObject()
-	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("createSharedObject is not implemented yet");
-	//Your Code is Here...
+    //COMMENT THE FOLLOWING LINE BEFORE START CODING
+    //panic("createSharedObject is not implemented yet");
+    //Your Code is Here...
 
 	struct Env* myenv = get_cpu_proc(); //The calling environment
-}
 
+	int numOfFrames =ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
+	uint32* ptr_page_table;
+
+	if(get_share(ownerID,shareName) != NULL) return E_SHARED_MEM_EXISTS;
+
+	struct Share* sharedObject = create_share(ownerID,shareName,size,isWritable);
+
+	uint32 pcount=0;
+	size = ROUNDUP(size,PAGE_SIZE);
+	for (uint32 i = (uint32)virtual_address ;i < (uint32)virtual_address + size ; i+=PAGE_SIZE ){
+		struct FrameInfo * newframe;
+		if(allocate_frame(&newframe) != 0)	return E_NO_SHARE;
+
+		if(map_frame(myenv->env_page_directory, newframe, i, PERM_AVAILABLE|PERM_USER|PERM_WRITEABLE) != 0)
+			return E_NO_SHARE;
+
+		sharedObject->framesStorage[pcount] = newframe;
+		pcount++;
+	}
+
+	acquire_spinlock(&AllShares.shareslock);
+		LIST_INSERT_TAIL(&AllShares.shares_list,sharedObject);
+	release_spinlock(&AllShares.shareslock);
+
+	return sharedObject->ID;
+}
 
 //======================
 // [5] Get Share Object:
@@ -166,6 +194,7 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("getSharedObject is not implemented yet");
 	//Your Code is Here...
+	struct Env* myenv = get_cpu_proc(); //The calling environment
 
 	struct Share *currList=NULL;
 	LIST_FOREACH(currList,&AllShares.shares_list){
@@ -193,7 +222,7 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 		{
 			continue;
 		}
-		int ret = map_frame(ptr_page_directory,currList->framesStorage[i],(uint32)virtual_address,currList->isWritable);
+		int ret = map_frame(myenv->env_page_directory,currList->framesStorage[i],(uint32)virtual_address,currList->isWritable);
 		if(ret!=0)
 		{
             cprintf("Error: Failed to map frame %d to virtual address 0x%x\n", i,(uint32)virtual_address);
@@ -205,7 +234,6 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 	return currList->ID;
 
 
-	struct Env* myenv = get_cpu_proc(); //The calling environment
 }
 
 //==================================================================================//
