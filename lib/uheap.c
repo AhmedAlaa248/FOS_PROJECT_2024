@@ -128,9 +128,6 @@ void* smalloc(char *sharedVarName, uint32 size, uint8 isWritable)
 	// Write your code here, remove the panic and write your code
 	//panic("smalloc() is not implemented yet...!!");
 
-
-
-
 	//	if(size > USER_HEAP_MAX - pagealloc_start - PAGE_SIZE)
 	//	{
 	//		cprintf("Size is bigger than the user heap");
@@ -173,17 +170,14 @@ void* smalloc(char *sharedVarName, uint32 size, uint8 isWritable)
 		pagesArray[page_number].returnedVA = startVA;
 		pagesArray[page_number].pagesNum = freePages;
 
-//		sys_allocate_user_mem((uint32)startVA, pageNumToAlloc * PAGE_SIZE);
 		int res = sys_createSharedObject(sharedVarName, size, isWritable, startVA);
 		if (res == E_SHARED_MEM_EXISTS || res == E_NO_SHARE)
 			return NULL;
 
 		return startVA;
-
 	}
 
 	return NULL;
-
 }
 
 //========================================

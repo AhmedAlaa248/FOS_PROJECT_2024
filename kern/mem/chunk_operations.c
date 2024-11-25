@@ -198,7 +198,7 @@ void allocate_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 
     	    if(pagetable==NULL)
     	        create_page_table(e->env_page_directory,virtual_address);
-        pt_set_page_permissions(e->env_page_directory,virtual_address,PERM_AVAILABLE,0);
+        pt_set_page_permissions(e->env_page_directory,virtual_address,PERM_MARKED,0);
         virtual_address=virtual_address+PAGE_SIZE;
 	}
 
@@ -221,7 +221,7 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 
 		for(int tobe=virtual_address;tobe<virtual_address+size;tobe+=PAGE_SIZE){
 			 uint32 * dircaccess = e->env_page_directory;
-			 pt_set_page_permissions(dircaccess,tobe,0,PERM_AVAILABLE); // de keda el unma
+			 pt_set_page_permissions(dircaccess,tobe,0,PERM_MARKED); // de keda el unma
 			 env_page_ws_invalidate(e,tobe);
 
 		}
