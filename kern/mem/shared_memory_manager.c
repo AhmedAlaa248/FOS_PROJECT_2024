@@ -68,7 +68,8 @@ inline struct FrameInfo** create_frames_storage(int numOfFrames)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("create_frames_storage is not implemented yet");
 	//Your Code is Here...
-	uint32 size = numOfFrames * sizeof(struct FrameInfo);
+
+	uint32 size = numOfFrames * sizeof(struct FrameInfo*);
 
 	struct FrameInfo** frames_storage = (struct FrameInfo**) kmalloc(size);
 
@@ -93,8 +94,10 @@ struct Share* create_share(int32 ownerID, char* shareName, uint32 size, uint8 is
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("create_share is not implemented yet");
 	//Your Code is Here...
+
 	uint32 structSize = sizeof(struct Share);
-	structSize=ROUNDUP(structSize,PAGE_SIZE);
+	structSize = ROUNDUP(structSize,PAGE_SIZE);
+
 	struct Share * share_obj = (struct Share*) kmalloc(structSize);
 
 	if(share_obj == NULL)
@@ -202,8 +205,9 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 
 	int perm = (current_obj->isWritable)? (PERM_MARKED|PERM_USER|PERM_WRITEABLE) : (PERM_MARKED|PERM_USER);
 
-	uint32 framesNum = ROUNDUP(current_obj->size, PAGE_SIZE);
+	uint32 framesNum = ROUNDUP(current_obj->size, PAGE_SIZE) /PAGE_SIZE;
 
+//	cprintf("\n\nNUmbe of\t\t\t allocated: %d\n\n",framesNum);
 
 	for (uint32 i = 0; i < framesNum; i++){
 		//Won't we update frameInfo refrences ?

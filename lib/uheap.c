@@ -170,6 +170,8 @@ void* applyingFFStrategy(uint32 size){
 		}
 	}
 
+//	cprintf("\n\nNUmber of allocated: %d\n\n",freePages );
+//	cprintf("\n\nNUmber of supposed to  be allocated: %d\n\n",pageNumToAlloc );
 	if(freePages < pageNumToAlloc)
 		return NULL;
 

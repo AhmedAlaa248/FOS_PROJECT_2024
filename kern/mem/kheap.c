@@ -240,9 +240,11 @@ void kfree(void* virtual_address)
 
 					uint32 frame_numberr = to_physical_address(freedFrame) / PAGE_SIZE;
 					physical_to_virtual_map[frame_numberr] = 0;
+
+//					if(freedFrame->references == 1)
+//						free_frame(freedFrame);
+
 					unmap_frame(ptr_page_directory, i);
-
-
 				}
 		}
 		allocations[index].start_address = NULL;
