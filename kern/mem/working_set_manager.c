@@ -23,18 +23,16 @@ inline struct WorkingSetElement* env_page_ws_list_create_element(struct Env* e, 
 	//Your Code is Here...
 	uint32 sizeOfSet = sizeof(struct WorkingSetElement);
 	struct WorkingSetElement* ele = (struct WorkingSetElement*)kmalloc(sizeOfSet);
-	if(ele!=NULL){
-		ele->virtual_address=virtual_address;
+	if (!ele)
+			panic("Can't Create Object from WorkingSetElement using kmalloc() function");
+		ele->virtual_address = ROUNDDOWN(virtual_address, PAGE_SIZE);
+		uint32* ptr_page_table = NULL;
+		get_frame_info(e->env_page_directory, ele->virtual_address, &ptr_page_table)->element = ele;
 		return ele;
-	}
-	else
-	{
-		panic("Failed to create element in working set list");
-	}
-	return NULL;
-
 
 }
+
+
 inline void env_page_ws_invalidate(struct Env* e, uint32 virtual_address)
 {
 	if (isPageReplacmentAlgorithmLRU(PG_REP_LRU_LISTS_APPROX))
