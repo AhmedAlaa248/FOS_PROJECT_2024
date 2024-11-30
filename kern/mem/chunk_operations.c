@@ -12,6 +12,7 @@
 #include "memory_manager.h"
 #include <inc/queue.h>
 
+
 //extern void inctst();
 
 /******************************/
@@ -204,6 +205,8 @@ void allocate_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 
 }
 
+
+
 //=====================================
 // 2) FREE USER MEMORY:
 //=====================================
@@ -219,15 +222,23 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 	// Write your code here, remove the panic and write your code
 //	panic("free_user_mem() is not implemented yet...!!");
 
-		for(int tobe=virtual_address;tobe<virtual_address+size;tobe+=PAGE_SIZE){
-			 uint32 * dircaccess = e->env_page_directory;
-			 pt_set_page_permissions(dircaccess,tobe,0,PERM_MARKED); // de keda el unma
-			 env_page_ws_invalidate(e,tobe);
+		for(int va=virtual_address; va<virtual_address+size; va+=PAGE_SIZE){
+			 pt_set_page_permissions(e->env_page_directory,va,0,PERM_MARKED); // de keda el unma
+			 pf_remove_env_page(e,va);
+			 if (pt_get_page_permissions(e->env_page_directory, va) & PERM_PRESENT)
+			 	{
+			 		uint32 *ptr_page_table;
+			 		struct WorkingSetElement *WSE = get_frame_info(e->env_page_directory, va, &ptr_page_table)->element;
+			 		unmap_frame(e->env_page_directory,WSE->virtual_address);
+			 		LIST_REMOVE(&(e->page_WS_list), WSE);
+			 		kfree(WSE);
 
+			 	}
 		}
 
 	//TODO: [PROJECT'24.MS2 - BONUS#3] [3] USER HEAP [KERNEL SIDE] - O(1) free_user_mem
 }
+
 
 //=====================================
 // 2) FREE USER MEMORY (BUFFERING):
