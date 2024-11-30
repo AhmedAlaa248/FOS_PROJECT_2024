@@ -324,6 +324,125 @@ void *krealloc(void *virtual_address, uint32 new_size)
 {
 	//TODO: [PROJECT'24.MS2 - BONUS#1] [1] KERNEL HEAP - krealloc
 	// Write your code here, remove the panic and write your code
-	return NULL;
-	panic("krealloc() is not implemented yet...!!");
+	//return NULL;
+	//panic("krealloc() is not implemented yet...!!");
+
+	if((uint32)virtual_address>=hLimit+PAGE_SIZE&&(uint32)virtual_address<KERNEL_HEAP_MAX) /**Page Allocator**/
+	{
+
+		if(new_size>DYN_ALLOC_MAX_BLOCK_SIZE) //reallocate at page allocator
+		{
+			uint32 newNoOfPages=ROUNDUP(new_size, PAGE_SIZE);
+			//uint32 start=hLimit+PAGE_SIZE;
+			int noOfPages,index;
+			uint32 startAdd=(uint32)virtual_address;
+
+			for(uint32 i=0;allocation_co ; i++)
+				{
+				  if(allocations[i].start_address==virtual_address)
+					{
+					  noOfPages=allocations[i].num_pages;
+					  index=i;
+					  break;
+					}
+				}
+
+
+		if(newNoOfPages>noOfPages)
+		{
+			uint32 *ptr_page_table = NULL;
+			uint32 foundedFreePages=0;
+			uint32 neededPages=newNoOfPages-noOfPages;
+			uint32 startSearchAddr=startAdd+(noOfPages*PAGE_SIZE);
+
+			for(uint32 i=startSearchAddr,j=0;i<KERNEL_HEAP_MAX,j<neededPages;i+=PAGE_SIZE,j++)
+			{
+			   struct FrameInfo* frame = get_frame_info(ptr_page_directory,i, &ptr_page_table);
+			   if(frame==NULL)
+				   foundedFreePages++;
+			   else
+				   break;
+			}
+			if(foundedFreePages==neededPages) //can expand
+			{
+				uint32 end=startSearchAddr+(PAGE_SIZE*neededPages);
+				for(uint32 i=startSearchAddr;i<end;i+=PAGE_SIZE)
+				{
+				   struct FrameInfo *new_frame = NULL;
+				   int ret=allocate_frame(&new_frame);
+				   if(ret!=0)
+					 return virtual_address;
+
+				   ret=map_frame(ptr_page_directory, new_frame, i, PERM_WRITEABLE);
+				    if(ret!=0)
+				   	return virtual_address;
+				}
+
+				allocations[index].num_pages=newNoOfPages;
+			}
+			else
+			{
+				void*temp=kmalloc(new_size);
+				if(temp==NULL)
+				  return virtual_address;
+
+				kfree(virtual_address);
+				return temp;
+			}
+
+
+
+		  }
+		else if(newNoOfPages<noOfPages)
+		{
+			uint32 pagesTobeFreed=noOfPages-newNoOfPages;
+			uint32 start=startAdd+(newNoOfPages*PAGE_SIZE);
+			uint32 end=startAdd+(noOfPages*PAGE_SIZE);
+
+			for(uint32 i=start;i<end;i+=PAGE_SIZE)
+			{
+				unmap_frame(ptr_page_directory, i);
+			}
+
+			allocations[index].num_pages=newNoOfPages;
+		}
+
+		else
+		{
+		  return virtual_address;
+		}
+
+
+		}
+
+		else //reallocate to block allocator
+		{
+			void* temp=alloc_block_FF(new_size);
+			if(temp==NULL)
+			  return virtual_address;
+			kfree(virtual_address);
+			return temp;
+		}
+	}
+
+
+
+
+	else if((uint32)virtual_address>=hStart&&(uint32)virtual_address<segmentBr) /**Block Allocator**/
+	{
+		if(new_size<=DYN_ALLOC_MAX_BLOCK_SIZE) //still at block allocator
+		{
+			return realloc_block_FF(virtual_address,new_size);
+		}
+		else
+		{
+			void*temp=kmalloc(new_size);
+			if(temp==NULL)
+			 return virtual_address;
+
+			free_block(virtual_address);
+
+		}
+	}
+	return virtual_address;
 }
