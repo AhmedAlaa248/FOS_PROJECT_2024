@@ -430,71 +430,54 @@ void *realloc_block_FF(void* va, uint32 new_size)
 	//Your Code is Here...
 
 	if (va == NULL && new_size == 0) {
-	        alloc_block_FF(0);
-	        return NULL;
-	    }
-
-	    if (new_size == 0) {
-	        free_block(va);
-	        return NULL;
-	    }
-
-	    if (va == NULL) {
-	        return (void*)alloc_block_FF(new_size);
-	    }
-
-
-	    uint32 sizeOfCurrBlock = get_block_size(va);
-	    uint32 adjustedNewSize = new_size + 8;
-
-
-	    if (adjustedNewSize > sizeOfCurrBlock) {
-	        uint32 nextBlockAddr = (uint32)va + sizeOfCurrBlock;
-	        if (is_free_block((void*)nextBlockAddr)) {
-	            uint32 nextBlockSize = get_block_size((void*)nextBlockAddr);
-	            if (sizeOfCurrBlock + nextBlockSize >= adjustedNewSize) {
-	                if (sizeOfCurrBlock + nextBlockSize - adjustedNewSize >= 16) {
-
-	                    set_block_data(va, adjustedNewSize, 1);
-	                    void* newFreeBlock = (char*)va + adjustedNewSize;
-	                    set_block_data(newFreeBlock, sizeOfCurrBlock + nextBlockSize - adjustedNewSize, 0);
-
-	                    LIST_INSERT_AFTER(&freeBlocksList, (struct BlockElement*)nextBlockAddr, (struct BlockElement*)newFreeBlock);
-	                    LIST_REMOVE(&freeBlocksList, (struct BlockElement*)nextBlockAddr);
-	                } else {
-
-	                    set_block_data(va, sizeOfCurrBlock + nextBlockSize, 1);
-	                    LIST_REMOVE(&freeBlocksList, (struct BlockElement*)nextBlockAddr);
-	                }
-	                return va;
-	            }
-	        }
-
-	        void* newBlock = alloc_block_FF(new_size);
-	        if(newBlock == NULL){
-	        return va;
-	        }
-	            memcpy(newBlock, va, sizeOfCurrBlock - 8);
-	            free_block(va);
-	        return newBlock;
-	    }
-
-
-	    if (adjustedNewSize < sizeOfCurrBlock) {
-	        if (sizeOfCurrBlock - adjustedNewSize >= 16) {
-
-	            set_block_data(va, adjustedNewSize, 1);
-
-	            void* newFreeBlock = (char*)va + adjustedNewSize;
-	            set_block_data(newFreeBlock, sizeOfCurrBlock - adjustedNewSize, 0);
-
-	            free_block(newFreeBlock);
-	        }
-	        return va;
-	    }
-
-
-	    return va;
+		alloc_block_FF(0);
+		return NULL;
+	}
+	if (new_size == 0) {
+		free_block(va);
+		return NULL;
+	}
+	if (va == NULL) {
+		return (void*)alloc_block_FF(new_size);
+	}
+	uint32 sizeOfCurrBlock = get_block_size(va);
+	uint32 elnewsize = new_size + 8;
+	if (elnewsize > sizeOfCurrBlock) {
+		uint32 nextblockk = (uint32)va + sizeOfCurrBlock;
+		if (is_free_block((void*)nextblockk)) {
+			uint32 nextblocksize = get_block_size((void*)nextblockk);
+			if (sizeOfCurrBlock + nextblocksize >= elnewsize) {
+				if (sizeOfCurrBlock + nextblocksize - elnewsize >= 16) {
+					set_block_data(va, elnewsize, 1);
+					void* elnewfreeblock = (char*)va + elnewsize;
+					set_block_data(elnewfreeblock, sizeOfCurrBlock + nextblocksize - elnewsize, 0);
+					LIST_INSERT_AFTER(&freeBlocksList, (struct BlockElement*)nextblockk, (struct BlockElement*)elnewfreeblock);
+					LIST_REMOVE(&freeBlocksList, (struct BlockElement*)nextblockk);
+				} else {
+					set_block_data(va, sizeOfCurrBlock + nextblocksize, 1);
+					LIST_REMOVE(&freeBlocksList, (struct BlockElement*)nextblockk);
+				}
+				return va;
+			}
+		}
+		void* newBlock = alloc_block_FF(new_size);
+		if(newBlock == NULL){
+		return va;
+		}
+			memcpy(newBlock, va, sizeOfCurrBlock - 8);
+			free_block(va);
+		return newBlock;
+	}
+	if (elnewsize < sizeOfCurrBlock) {
+		if (sizeOfCurrBlock - elnewsize >= 16) {
+			set_block_data(va, elnewsize, 1);
+			void* elnewfreeblock = (char*)va + elnewsize;
+			set_block_data(elnewfreeblock, sizeOfCurrBlock - elnewsize, 0);
+			free_block(elnewfreeblock);
+		}
+		return va;
+	}
+	return va;
 }
 
 /*********************************************************************************************/
