@@ -429,93 +429,72 @@ void *realloc_block_FF(void* va, uint32 new_size)
 	//panic("realloc_block_FF is not implemented yet");
 	//Your Code is Here...
 
-    if (va == NULL && new_size == 0)
-    {
-        alloc_block_FF(0);
-        cprintf("VA NULL & SIZE = 0\n");
-        return NULL;
-    }
+	if (va == NULL && new_size == 0) {
+	        alloc_block_FF(0);
+	        return NULL;
+	    }
+
+	    if (new_size == 0) {
+	        free_block(va);
+	        return NULL;
+	    }
+
+	    if (va == NULL) {
+	        return (void*)alloc_block_FF(new_size);
+	    }
 
 
-    if (new_size == 0)
-    {
-        free_block(va);
-        cprintf("SIZE = 0\n");
-        return NULL;
-    }
+	    uint32 sizeOfCurrBlock = get_block_size(va);
+	    uint32 adjustedNewSize = new_size + 8;
 
 
-    if (va == NULL)
-    {
-    	cprintf("VA NULL\n");
-        return (void*)alloc_block_FF(new_size);
-    }
+	    if (adjustedNewSize > sizeOfCurrBlock) {
+	        uint32 nextBlockAddr = (uint32)va + sizeOfCurrBlock;
+	        if (is_free_block((void*)nextBlockAddr)) {
+	            uint32 nextBlockSize = get_block_size((void*)nextBlockAddr);
+	            if (sizeOfCurrBlock + nextBlockSize >= adjustedNewSize) {
+	                if (sizeOfCurrBlock + nextBlockSize - adjustedNewSize >= 16) {
+
+	                    set_block_data(va, adjustedNewSize, 1);
+	                    void* newFreeBlock = (char*)va + adjustedNewSize;
+	                    set_block_data(newFreeBlock, sizeOfCurrBlock + nextBlockSize - adjustedNewSize, 0);
+
+	                    LIST_INSERT_AFTER(&freeBlocksList, (struct BlockElement*)nextBlockAddr, (struct BlockElement*)newFreeBlock);
+	                    LIST_REMOVE(&freeBlocksList, (struct BlockElement*)nextBlockAddr);
+	                } else {
+
+	                    set_block_data(va, sizeOfCurrBlock + nextBlockSize, 1);
+	                    LIST_REMOVE(&freeBlocksList, (struct BlockElement*)nextBlockAddr);
+	                }
+	                return va;
+	            }
+	        }
+
+	        void* newBlock = alloc_block_FF(new_size);
+	        if(newBlock == NULL){
+	        return va;
+	        }
+	            memcpy(newBlock, va, sizeOfCurrBlock - 8);
+	            free_block(va);
+	        return newBlock;
+	    }
 
 
+	    if (adjustedNewSize < sizeOfCurrBlock) {
+	        if (sizeOfCurrBlock - adjustedNewSize >= 16) {
 
-    uint32 sizeOfCurrBlock = get_block_size(va);
-    new_size = ROUNDUP(new_size + 2 * sizeof(int), 4);
+	            set_block_data(va, adjustedNewSize, 1);
 
+	            void* newFreeBlock = (char*)va + adjustedNewSize;
+	            set_block_data(newFreeBlock, sizeOfCurrBlock - adjustedNewSize, 0);
 
-    if (new_size <= sizeOfCurrBlock)
-    {
-    	uint32 remainingSize = sizeOfCurrBlock - new_size;
-    	forsplitting(va, new_size, sizeOfCurrBlock,remainingSize);
-    	//cprintf("NEW size less than or equal size\n");
-        return (void*)va;
-    }
-    if (new_size > sizeOfCurrBlock)
-    {
-        void* afterVA = (void*)((uint32)va + sizeOfCurrBlock);
-        if ((uint32)afterVA % sizeof(int) != 0) {
-            afterVA = (void*)((uint32)afterVA + sizeof(int));
-        }
-        uint32 sizeOfafterBlock = get_block_size(afterVA);
-        int8 isafterBlockFree = is_free_block(afterVA);
+	            free_block(newFreeBlock);
+	        }
+	        return va;
+	    }
 
 
-        if (isafterBlockFree == 1 && (sizeOfCurrBlock + sizeOfafterBlock >= new_size))
-        {
-
-            LIST_REMOVE(&freeBlocksList, (struct BlockElement*)afterVA);
-
-
-            set_block_data(va, new_size, 1);
-
-
-            uint32 remainingSize = (sizeOfCurrBlock + sizeOfafterBlock) - new_size;
-
-            if (remainingSize >= DYN_ALLOC_MIN_BLOCK_SIZE)
-            {
-
-                void* newFreeBlock = (void*)((uint32)va + new_size);
-                set_block_data(newFreeBlock, remainingSize, 0);
-
-                LIST_INSERT_HEAD(&freeBlocksList, (struct BlockElement*)newFreeBlock);
-            }
-            //cprintf("NEW size > size and next is free\n");
-            return (void*)va;
-        }
-        else if(isafterBlockFree == 0 && (sizeOfCurrBlock + sizeOfafterBlock >= new_size))
-        {
-        	void* ret = alloc_block_FF(new_size);
-        	//free_block(va);
-        	va=ret;
-        	//NOT HANDLED IN TESTS
-        	cprintf("NEW size > size and next is not free\n");
-        	return (void*)ret;
-        }
-        else
-        {
-        	void* ret = sbrk(new_size);
-        	set_block_data(ret,new_size,1);
-        	cprintf("SBRK\n");
-        	return (void*)ret;
-        }
-    }
-
-    cprintf("Nothing\n");
-    return NULL;
+	    return va;
 }
 
 /*********************************************************************************************/
