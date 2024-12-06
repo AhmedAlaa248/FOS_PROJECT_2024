@@ -484,6 +484,10 @@ void sys_run_env(int32 envId)
 {
 	sched_run_env(envId);
 }
+void sys_env_set_priority(int32 envID,int priority)
+{
+	env_set_priority(envID,priority);
+}
 
 
 //====================================
@@ -538,6 +542,10 @@ uint32 syscall(uint32 syscallno, uint32 a1, uint32 a2, uint32 a3, uint32 a4, uin
 		break;
 
 	//======================================================================
+	case SYS_env_set_priority:
+		sys_env_set_priority(a1,a2);
+		return 0;
+		break;
 	case SYS_cputs:
 		sys_cputs((const char*)a1,a2,(uint8)a3);
 		return 0;

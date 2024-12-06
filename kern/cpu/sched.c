@@ -350,7 +350,11 @@ struct Env* fos_scheduler_PRIRR()
 	//TODO: [PROJECT'24.MS3 - #08] [3] PRIORITY RR Scheduler - fos_scheduler_PRIRR
 	//Your code is here
 	//Comment the following line
-	panic("Not implemented yet");
+
+	//panic("Not implemented yet");
+	struct Env* myEnv = get_cpu_proc();
+	return NULL;
+
 }
 
 //========================================
