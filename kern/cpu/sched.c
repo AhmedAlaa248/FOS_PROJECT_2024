@@ -353,6 +353,25 @@ struct Env* fos_scheduler_PRIRR()
 
 	//panic("Not implemented yet");
 	struct Env* myEnv = get_cpu_proc();
+	if(myEnv!=NULL)
+	{
+		acquire_spinlock(&ProcessQueues.qlock);
+		sched_insert_ready(myEnv);
+		kclock_set_quantum(quantums[0]);
+		release_spinlock(&ProcessQueues.qlock);
+	}
+	int priority = myEnv->priority;
+
+	struct Env* nextEnv=NULL;
+	nextEnv=dequeue(&(ProcessQueues.env_ready_queues[priority]));
+	kclock_set_quantum(quantums[0]);
+	if(nextEnv!=NULL)
+	{
+		set_cpu_proc(nextEnv);
+		return nextEnv;
+	}
+
+
 	return NULL;
 
 }
