@@ -155,6 +155,7 @@ void sched_insert_ready(struct Env* env)
 	{
 		//cprintf("\nInserting %d into ready queue 0\n", env->env_id);
 		env->env_status = ENV_READY ;
+
 		enqueue(&(ProcessQueues.env_ready_queues[env->priority]), env);
 	}
 }
@@ -708,21 +709,20 @@ void env_set_priority(int envID, int priority)
 	envid2env(envID, &proc, 0);
 	int res = envid2env(envID, &proc, 0);
 
-
 	//Your code is here
 	//Comment the following line
 	//panic("Not implemented yet");
 	if(res!=-E_BAD_ENV)
 	{
+
 		proc->priority=priority;
 			if(proc->env_status==ENV_READY)
 			{
 				acquire_spinlock(&(ProcessQueues.qlock));
-				cprintf("Hello\n");
-					enqueue(&(ProcessQueues.env_ready_queues[proc->priority]), proc);
-				cprintf("723\n");
+				sched_insert_ready(proc);
 				release_spinlock(&ProcessQueues.qlock);
 			}
+
 	}
 		else
 		{
