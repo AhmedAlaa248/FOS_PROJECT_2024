@@ -13,8 +13,20 @@ struct semaphore get_semaphore(int32 ownerEnvID, char* semaphoreName)
 {
 	//TODO: [PROJECT'24.MS3 - #03] [2] USER-LEVEL SEMAPHORE - get_semaphore
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("get_semaphore is not implemented yet");
+	//panic("get_semaphore is not implemented yet");
 	//Your Code is Here...
+	struct semaphore shared_semaphore;
+	shared_semaphore.semdata = NULL;
+
+	void * VA = sget(ownerEnvID, semaphoreName);
+
+	if(VA == NULL) {
+		return shared_semaphore;
+	}
+
+	shared_semaphore.semdata = (struct __semdata*)VA;
+
+	return shared_semaphore;
 }
 
 void wait_semaphore(struct semaphore sem)
