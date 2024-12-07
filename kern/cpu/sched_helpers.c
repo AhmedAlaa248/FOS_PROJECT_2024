@@ -718,7 +718,9 @@ void env_set_priority(int envID, int priority)
 			if(proc->env_status==ENV_READY)
 			{
 				acquire_spinlock(&(ProcessQueues.qlock));
-				enqueue(&(ProcessQueues.env_ready_queues[proc->priority]), proc);
+				cprintf("Hello\n");
+					enqueue(&(ProcessQueues.env_ready_queues[proc->priority]), proc);
+				cprintf("723\n");
 				release_spinlock(&ProcessQueues.qlock);
 			}
 	}

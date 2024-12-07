@@ -249,15 +249,24 @@ void sched_init_PRIRR(uint8 numOfPriorities, uint8 quantum, uint32 starvThresh)
 	//TODO: [PROJECT'24.MS3 - #07] [3] PRIORITY RR Scheduler - sched_init_PRIRR
 	//Your code is here
 	//Comment the following line
-	panic("Not implemented yet");
+	//panic("Not implemented yet");
+
+	quantums[0] = quantum;
+	num_of_ready_queues = numOfPriorities;
+	StarvationThreshold = starvThresh;
+
+	cprintf("Quantum = %d\n", quantums[0]);
+	cprintf("NumOfPriorities = %d\n", num_of_ready_queues);
+	cprintf("starvThresh = %d\n", StarvationThreshold);
+
+	//kclock_set_quantum(quantum);
 
 
-
-
-
-
-
-
+	for (uint8 i = 0; i < numOfPriorities; i++){
+		acquire_spinlock(&ProcessQueues.qlock);
+			init_queue(&ProcessQueues.env_ready_queues[i]);
+		release_spinlock(&ProcessQueues.qlock);
+	}
 
 	//=========================================
 	//DON'T CHANGE THESE LINES=================
@@ -353,7 +362,7 @@ struct Env* fos_scheduler_PRIRR()
 
 	//panic("Not implemented yet");
 	struct Env* myEnv = get_cpu_proc();
-	if(myEnv!=NULL)
+	if(myEnv != NULL)
 	{
 		acquire_spinlock(&ProcessQueues.qlock);
 		sched_insert_ready(myEnv);
@@ -363,8 +372,10 @@ struct Env* fos_scheduler_PRIRR()
 	int priority = myEnv->priority;
 
 	struct Env* nextEnv=NULL;
+	acquire_spinlock(&ProcessQueues.qlock);
 	nextEnv=dequeue(&(ProcessQueues.env_ready_queues[priority]));
 	kclock_set_quantum(quantums[0]);
+	release_spinlock(&ProcessQueues.qlock);
 	if(nextEnv!=NULL)
 	{
 		set_cpu_proc(nextEnv);
@@ -387,7 +398,42 @@ void clock_interrupt_handler(struct Trapframe* tf)
 		//TODO: [PROJECT'24.MS3 - #09] [3] PRIORITY RR Scheduler - clock_interrupt_handler
 		//Your code is here
 		//Comment the following line
-		panic("Not implemented yet");
+		//panic("Not implemented yet");
+
+		int qSize = 0;
+
+		for (uint32 i = num_of_ready_queues - 1; i >= 0 ; i--){
+			struct Env * curr;
+
+			LIST_FOREACH(curr, &(ProcessQueues.env_ready_queues[i])){
+				int ticks = timer_ticks();
+
+				if (ticks > (int) StarvationThreshold && curr->priority != 0){
+					curr->priority--;
+				}
+
+			}
+//
+//			for (int j = 0; j < qSize; j++){
+//				int ticks = timer_ticks();
+//
+//
+//				ProcessQueues.env_ready_queues[i][j];
+//
+//				/*if (ticks > (int) StarvationThreshold){
+//					acquire_spinlock(&ProcessQueues.qlock);
+//						remove_from_queue(&ProcessQueues.env_ready_queues[i], ProcessQueues.env_ready_queues[i][j]);
+//					release_spinlock(&ProcessQueues.qlock);
+//
+//					acquire_spinlock(&ProcessQueues.qlock);
+//						enqueue()
+//					release_spinlock(&ProcessQueues.qlock);
+//
+//				}*/
+//			}
+
+		}
+
 	}
 
 
