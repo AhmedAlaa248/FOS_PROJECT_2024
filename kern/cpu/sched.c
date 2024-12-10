@@ -249,16 +249,18 @@ void sched_init_PRIRR(uint8 numOfPriorities, uint8 quantum, uint32 starvThresh)
 	//Comment the following line
 	//panic("Not implemented yet");
 	num_of_ready_queues = numOfPriorities;
-	ProcessQueues.env_ready_queues = (struct Env_Queue*)kmalloc(numOfPriorities*sizeof(struct Env_Queue));
-	quantums=(uint8*)kmalloc(sizeof(uint8));
+
+	ProcessQueues.env_ready_queues = (struct Env_Queue*) kmalloc(numOfPriorities * sizeof(struct Env_Queue));
+
+	quantums = (uint8*) kmalloc(sizeof(uint8));
 	quantums[0]=quantum;
+	kclock_set_quantum(quantum);
+
 	StarvationThreshold = starvThresh;
+
 	cprintf("Quantum = %d\n", quantums[0]);
 	cprintf("NumOfPriorities = %d\n", num_of_ready_queues);
 	cprintf("starvThresh = %d\n", StarvationThreshold);
-
-	//kclock_set_quantum(quantum);
-
 
 	for (uint8 i = 0; i < numOfPriorities; i++){
 		acquire_spinlock(&ProcessQueues.qlock);
@@ -368,15 +370,15 @@ struct Env* fos_scheduler_PRIRR()
 	}
 	struct Env* next_environment=NULL;
 	for(int i = 0; i < num_of_ready_queues;i++)
-				{
-					if(ProcessQueues.env_ready_queues[i].size!=0)
-					{
-						kclock_set_quantum(quantums[0]);
-						next_environment=dequeue(&ProcessQueues.env_ready_queues[i]);
-						set_cpu_proc(next_environment);
-						return next_environment;
-					}
-				}
+	{
+		if(ProcessQueues.env_ready_queues[i].size!=0)
+		{
+			kclock_set_quantum(quantums[0]);
+			next_environment=dequeue(&ProcessQueues.env_ready_queues[i]);
+			set_cpu_proc(next_environment);
+			return next_environment;
+		}
+	}
 
 
 	return NULL;
@@ -401,8 +403,16 @@ void clock_interrupt_handler(struct Trapframe* tf)
 		for (uint32 i = num_of_ready_queues - 1; i > 0 ; i--){
 			struct Env * curr;
 			LIST_FOREACH(curr, &(ProcessQueues.env_ready_queues[i])){
-				int64 ticks = timer_ticks();
-				if (ticks > (int64) StarvationThreshold && curr->priority != 0){
+				int64 now_ticks = timer_ticks() - curr->ellolTicks;
+//				cprintf("///////In starv = %d\n", now_ticks);
+//				cprintf("///////Original ticks = %d\n", timer_ticks());
+//				cprintf("///////Start ticks = %d\n", curr->ellolTicks);
+				if (now_ticks > (int64) StarvationThreshold && curr->priority != 0){
+					cprintf("??????????\n");
+					cprintf("now_ticks: %d\n", now_ticks);
+					cprintf("curr_env: %d\n", curr->env_id);
+					cprintf("??????????\n");
+
 					curr->priority--;
 				}
 
