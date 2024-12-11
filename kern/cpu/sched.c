@@ -257,11 +257,11 @@ void sched_init_PRIRR(uint8 numOfPriorities, uint8 quantum, uint32 starvThresh)
 	kclock_set_quantum(quantum);
 
 	StarvationThreshold = starvThresh;
-
+/*
 	cprintf("Quantum = %d\n", quantums[0]);
 	cprintf("NumOfPriorities = %d\n", num_of_ready_queues);
 	cprintf("starvThresh = %d\n", StarvationThreshold);
-
+*/
 	for (uint8 i = 0; i < numOfPriorities; i++){
 		acquire_spinlock(&ProcessQueues.qlock);
 		cprintf("%d\n",i);
