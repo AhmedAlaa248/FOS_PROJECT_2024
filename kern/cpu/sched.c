@@ -371,7 +371,7 @@ struct Env* fos_scheduler_PRIRR()
 	struct Env* next_environment=NULL;
 	for(int i = 0; i < num_of_ready_queues;i++)
 	{
-		if(ProcessQueues.env_ready_queues[i].size!=0)
+		if(ProcessQueues.env_ready_queues[i].size != 0)
 		{
 			kclock_set_quantum(quantums[0]);
 			next_environment=dequeue(&ProcessQueues.env_ready_queues[i]);
@@ -379,7 +379,6 @@ struct Env* fos_scheduler_PRIRR()
 			return next_environment;
 		}
 	}
-
 
 	return NULL;
 
@@ -398,8 +397,6 @@ void clock_interrupt_handler(struct Trapframe* tf)
 		//Comment the following line
 		//panic("Not implemented yet");
 
-		int qSize = 0;
-
 		for (uint32 i = num_of_ready_queues - 1; i > 0 ; i--){
 			struct Env * curr;
 			LIST_FOREACH(curr, &(ProcessQueues.env_ready_queues[i])){
@@ -407,39 +404,33 @@ void clock_interrupt_handler(struct Trapframe* tf)
 //				cprintf("///////In starv = %d\n", now_ticks);
 //				cprintf("///////Original ticks = %d\n", timer_ticks());
 //				cprintf("///////Start ticks = %d\n", curr->ellolTicks);
+//				cprintf("///////Priority = %d\n", curr->priority);
+
 				if (now_ticks > (int64) StarvationThreshold && curr->priority != 0){
-					cprintf("??????????\n");
+/*
+ * 					cprintf("??????????\n");
 					cprintf("now_ticks: %d\n", now_ticks);
 					cprintf("curr_env: %d\n", curr->env_id);
+					cprintf("Priority = %d\n", curr->priority);
 					cprintf("??????????\n");
+ *
+ */
 
 					curr->priority--;
+					acquire_spinlock(&ProcessQueues.qlock);
+						remove_from_queue(&ProcessQueues.env_ready_queues[i],curr);
+					release_spinlock(&ProcessQueues.qlock);
+
+					acquire_spinlock(&ProcessQueues.qlock);
+						enqueue(&ProcessQueues.env_ready_queues[i-1],curr);
+					release_spinlock(&ProcessQueues.qlock);
 				}
 
 			}
-//
-//			for (int j = 0; j < qSize; j++){
-//				int ticks = timer_ticks();
-//
-//
-//				ProcessQueues.env_ready_queues[i][j];
-//
-//				/*if (ticks > (int) StarvationThreshold){
-//					acquire_spinlock(&ProcessQueues.qlock);
-//						remove_from_queue(&ProcessQueues.env_ready_queues[i], ProcessQueues.env_ready_queues[i][j]);
-//					release_spinlock(&ProcessQueues.qlock);
-//
-//					acquire_spinlock(&ProcessQueues.qlock);
-//						enqueue()
-//					release_spinlock(&ProcessQueues.qlock);
-//
-//				}*/
-//			}
 
 		}
 
 	}
-
 
 
 	/********DON'T CHANGE THESE LINES***********/

@@ -707,7 +707,6 @@ void env_set_priority(int envID, int priority)
 
 	//Get the process of the given ID
 	struct Env* proc ;
-	envid2env(envID, &proc, 0);
 	int res = envid2env(envID, &proc, 0);
 
 	//Your code is here
