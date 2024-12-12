@@ -510,6 +510,46 @@ void sys_bypassPageFault(uint8 instrLength)
 	bypassInstrLength = instrLength;
 }
 
+void sys_enqueue(struct Env_Queue* queue,uint32*ptr)
+{
+	struct Env *ElCurrentProc = get_cpu_proc();
+
+	//*ptr=0;
+
+	ElCurrentProc->env_status=ENV_BLOCKED;
+
+
+	acquire_spinlock(&ProcessQueues.qlock);
+		{
+		    *ptr=0;
+			enqueue(queue,ElCurrentProc);
+			sched();
+		}
+
+	release_spinlock(&ProcessQueues.qlock);
+
+
+	*ptr=1;
+
+}
+
+void sys_dequeue(struct Env_Queue* queue)
+{
+	struct Env *ProcessWaked;
+
+	acquire_spinlock(&ProcessQueues.qlock);
+		{
+			if(queue->size!=0){
+				ProcessWaked = dequeue(queue);
+				sched_insert_ready0(ProcessWaked);
+			}
+		}
+
+		release_spinlock(&ProcessQueues.qlock);
+
+}
+
+
 
 /**************************************************************************/
 /************************* SYSTEM CALLS HANDLER ***************************/
@@ -708,6 +748,19 @@ uint32 syscall(uint32 syscallno, uint32 a1, uint32 a2, uint32 a3, uint32 a4, uin
 	case SYS_utilities:
 		sys_utilities((char*)a1, (int)a2);
 		return 0;
+
+
+	case SYS_enqueue:
+			sys_enqueue((struct Env_Queue*)a1,(uint32*)a2);
+			return 0;
+			break;
+
+		case SYS_dequeue:
+			sys_dequeue((struct Env_Queue*)a1);
+			return 0;
+			break;
+
+
 
 	case NSYSCALLS:
 		return 	-E_INVAL;

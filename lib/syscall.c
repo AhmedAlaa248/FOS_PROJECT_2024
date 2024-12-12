@@ -325,3 +325,14 @@ void sys_env_set_priority(int32 envID,int priority)
 	return;
 }
 
+void sys_enqueue(struct Env_Queue* queue,uint32*ptr)
+{
+	syscall(SYS_enqueue,(uint32)queue,(uint32)ptr,0,0,0);
+	return;
+}
+void sys_dequeue(struct Env_Queue* queue)
+{
+	 syscall(SYS_dequeue,(uint32)queue,0,0,0,0);
+	 return ;
+}
+
