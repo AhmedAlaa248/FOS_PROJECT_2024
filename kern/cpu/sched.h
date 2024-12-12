@@ -73,10 +73,6 @@ uint32 isSchedMethodMLFQ();
 uint32 isSchedMethodBSD();
 uint32 isSchedMethodPRIRR();
 
-
-uint32 StarvationThreshold;
-
-
 struct Env* fos_scheduler_RR();
 struct Env* fos_scheduler_MLFQ();
 struct Env* fos_scheduler_BSD();
