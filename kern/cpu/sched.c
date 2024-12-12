@@ -264,7 +264,7 @@ void sched_init_PRIRR(uint8 numOfPriorities, uint8 quantum, uint32 starvThresh)
 */
 	for (uint8 i = 0; i < numOfPriorities; i++){
 		acquire_spinlock(&ProcessQueues.qlock);
-		cprintf("%d\n",i);
+//		cprintf("%d\n",i);
 			init_queue(&ProcessQueues.env_ready_queues[i]);
 		release_spinlock(&ProcessQueues.qlock);
 	}
@@ -381,7 +381,6 @@ struct Env* fos_scheduler_PRIRR()
 	}
 
 	return NULL;
-
 }
 
 //========================================
@@ -431,7 +430,6 @@ void clock_interrupt_handler(struct Trapframe* tf)
 		}
 
 	}
-
 
 	/********DON'T CHANGE THESE LINES***********/
 	ticks++ ;

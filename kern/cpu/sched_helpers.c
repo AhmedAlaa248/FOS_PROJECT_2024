@@ -736,6 +736,6 @@ void sched_set_starv_thresh(uint32 starvThresh)
 	//Comment the following line
 
 	//panic("Not implemented yet");
-	StarvationThreshold=starvThresh;
+	StarvationThreshold = starvThresh;
 
 }
