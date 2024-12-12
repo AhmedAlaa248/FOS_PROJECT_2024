@@ -83,7 +83,10 @@ void 	sys_set_uheap_strategy(uint32 heapStrategy);
 //Page File
 int 	sys_pf_calculate_allocated_pages(void);
 
+
 //Semaphores
+void sys_enqueue(struct Env_Queue* queue,uint32*ptr);
+void sys_dequeue(struct Env_Queue* queue);
 
 
 //Sharing
