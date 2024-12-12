@@ -276,7 +276,121 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 		//refer to the project presentation and documentation for details
 		//TODO: [PROJECT'24.MS3] [2] FAULT HANDLER II - Replacement
 		// Write your code here, remove the panic and write your code
-		panic("page_fault_handler() Replacement is not implemented yet...!!");
+		//panic("page_fault_handler() Replacement is not implemented yet...!!");
+		struct WorkingSetElement *currr = faulted_env->page_last_WS_element;
+		struct WorkingSetElement *vic = NULL;
+		struct WorkingSetElement *beforeVic = NULL;
+		bool found = 0;
+		bool inserthead = 0;
+		uint32 mx_sws = 0;
+
+
+		while (1) {
+
+			int perm = pt_get_page_permissions(faulted_env->env_page_directory, currr->virtual_address);
+
+			if (perm & PERM_USED) {
+
+				pt_set_page_permissions(faulted_env->env_page_directory, currr->virtual_address, 0, PERM_USED);
+				currr->sweeps_counter = 0;
+			} else {
+
+				currr->sweeps_counter++;
+
+				if (page_WS_max_sweeps > 0) {
+					mx_sws = page_WS_max_sweeps;
+
+					if (currr->sweeps_counter >= mx_sws) {
+
+						found = 1;
+						vic = currr;
+					}
+				} else {
+					mx_sws = (perm & PERM_MODIFIED) ? ((-1 * page_WS_max_sweeps) + 1) : (-1 * page_WS_max_sweeps);
+
+					if (currr->sweeps_counter >= mx_sws) {
+
+						found = 1;
+						vic = currr;
+					}
+				}
+			}
+
+			if (!found) {
+				if (currr->prev_next_info.le_next == NULL) {
+
+					currr = faulted_env->page_WS_list.lh_first;
+					faulted_env->page_last_WS_element = faulted_env->page_WS_list.lh_first;
+				} else {
+					currr = currr->prev_next_info.le_next;
+					faulted_env->page_last_WS_element = faulted_env->page_last_WS_element->prev_next_info.le_next;
+				}
+			} else {
+				if (currr->prev_next_info.le_prev != NULL) {
+					beforeVic = currr->prev_next_info.le_prev;
+				} else {
+					inserthead = 1;
+				}
+
+				break;
+			}
+		}
+
+		if (found) {
+			uint32 *pagetable = NULL;
+			struct FrameInfo *vic_Frame = get_frame_info(faulted_env->env_page_directory, vic->virtual_address, &pagetable);
+			if (vic_Frame == NULL) {
+								cprintf("Failed to retrieve frame info for victim page.\n");
+							   }
+			int permm = pt_get_page_permissions(faulted_env->env_page_directory, vic->virtual_address);
+			 if (permm & PERM_MODIFIED) {
+			  pf_update_env_page(faulted_env, vic->virtual_address, vic_Frame);
+
+			  }
+
+//				      test hena el qm
+			  env_page_ws_invalidate(faulted_env, vic->virtual_address);
+			  struct FrameInfo* replacedd=NULL;
+			  int allocs =allocate_frame(&replacedd);
+			  if(allocs !=0){
+				  cprintf("error in allocate \n");
+			  }
+			  int mapss=map_frame(faulted_env->env_page_directory,vic_Frame,fault_va,PERM_WRITEABLE|PERM_USER);
+			  if(mapss !=0){
+				  cprintf("error in map");
+			  }
+			  pf_read_env_page(faulted_env, (void *)fault_va);
+
+//				      cprintf("3rft a3dy \n");
+
+
+
+
+//				        env_page_ws_invalidate(faulted_env, vic->virtual_address);
+
+				struct WorkingSetElement *ele = env_page_ws_list_create_element(faulted_env, fault_va);
+				ele->sweeps_counter = 0;
+				ele->virtual_address = fault_va;
+
+				if (inserthead == 1) {
+					LIST_INSERT_HEAD(&(faulted_env->page_WS_list), ele);
+				} else {
+					LIST_INSERT_AFTER(&(faulted_env->page_WS_list), beforeVic, ele);
+				}
+
+				if (ele->prev_next_info.le_next != NULL) {
+					faulted_env->page_last_WS_element = ele->prev_next_info.le_next;
+				} else {
+					faulted_env->page_last_WS_element = faulted_env->page_WS_list.lh_first;
+				}
+
+//				    } else {
+//				        cprintf("Page succes.\n");
+//				    }
+		}
+
+
+
 	}
 }
 
