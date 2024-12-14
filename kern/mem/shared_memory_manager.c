@@ -136,15 +136,15 @@ struct Share* get_share(int32 ownerID, char* name)
 	//Your Code is Here...
 
 	struct Share * findshare;
-	acquire_spinlock(&AllShares.shareslock);
+	//acquire_spinlock(&AllShares.shareslock);
 	LIST_FOREACH(findshare, &(AllShares.shares_list)){
 		if(findshare->ownerID == ownerID
 		&& strcmp(findshare->name, name) == 0){
-			release_spinlock(&AllShares.shareslock);
+		//	release_spinlock(&AllShares.shareslock);
 			return findshare;
 		}
 	}
-	release_spinlock(&AllShares.shareslock);
+	//release_spinlock(&AllShares.shareslock);
 	return NULL;
 }
 
@@ -157,13 +157,17 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
     //COMMENT THE FOLLOWING LINE BEFORE START CODING
     //panic("createSharedObject is not implemented yet");
     //Your Code is Here...
-
+	acquire_spinlock(&AllShares.shareslock);
 	struct Env* myenv = get_cpu_proc(); //The calling environment
 
 	int numOfFrames =ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
 	uint32* ptr_page_table;
 
-	if(get_share(ownerID,shareName) != NULL) return E_SHARED_MEM_EXISTS;
+	if(get_share(ownerID,shareName) != NULL)
+	{
+		release_spinlock(&AllShares.shareslock);
+		return E_SHARED_MEM_EXISTS;
+	}
 
 	struct Share* sharedObject = create_share(ownerID,shareName,size,isWritable);
 
@@ -171,19 +175,26 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 	size = ROUNDUP(size,PAGE_SIZE);
 	for (uint32 i = (uint32)virtual_address ;i < (uint32)virtual_address + size ; i+=PAGE_SIZE ){
 		struct FrameInfo * newframe;
-		if(allocate_frame(&newframe) != 0)	return E_NO_SHARE;
+		if(allocate_frame(&newframe) != 0)
+		{
+			release_spinlock(&AllShares.shareslock);
+			return E_NO_SHARE;
+		}
 
 		if(map_frame(myenv->env_page_directory, newframe, i, PERM_MARKED|PERM_USER|PERM_WRITEABLE) != 0)
+		{
+			release_spinlock(&AllShares.shareslock);
 			return E_NO_SHARE;
+		}
 
 		sharedObject->framesStorage[pcount] = newframe;
 		pcount++;
 	}
 
-	acquire_spinlock(&AllShares.shareslock);
+	//acquire_spinlock(&AllShares.shareslock);
 		LIST_INSERT_TAIL(&AllShares.shares_list,sharedObject);
+	//release_spinlock(&AllShares.shareslock);
 	release_spinlock(&AllShares.shareslock);
-
 	return sharedObject->ID;
 }
 
@@ -197,11 +208,15 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("getSharedObject is not implemented yet");
 	//Your Code is Here...
-	struct Env* myenv = get_cpu_proc(); //The calling environment
 
+	struct Env* myenv = get_cpu_proc(); //The calling environment
+	acquire_spinlock(&AllShares.shareslock);
 	struct Share * current_obj = get_share(ownerID, shareName);
 
-	if(current_obj == NULL)	return E_SHARED_MEM_NOT_EXISTS;
+	if(current_obj == NULL){
+		release_spinlock(&AllShares.shareslock);
+		return E_SHARED_MEM_NOT_EXISTS;
+	}
 
 	int perm = (current_obj->isWritable)? (PERM_MARKED|PERM_USER|PERM_WRITEABLE) : (PERM_MARKED|PERM_USER);
 
@@ -219,7 +234,7 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 	}
 
 	current_obj->references ++;
-
+	release_spinlock(&AllShares.shareslock);
 	return current_obj->ID;
 
 }

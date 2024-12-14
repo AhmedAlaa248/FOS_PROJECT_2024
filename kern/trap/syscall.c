@@ -372,7 +372,7 @@ void sys_set_uheap_strategy(uint32 heapStrategy)
 /*******************************/
 int sys_createSharedObject(char* shareName, uint32 size, uint8 isWritable, void* virtual_address)
 {
-	return createSharedObject(cur_env->env_id, shareName, size, isWritable, virtual_address);
+	return createSharedObject(get_cpu_proc()->env_id, shareName, size, isWritable, virtual_address);
 }
 
 int sys_getSizeOfSharedObject(int32 ownerID, char* shareName)
