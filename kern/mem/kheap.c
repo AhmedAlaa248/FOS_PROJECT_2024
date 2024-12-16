@@ -10,6 +10,8 @@ struct AllocationInfo {
 };
 uint32 physical_to_virtual_map[65536];
 struct AllocationInfo allocations[MAX_SHEFO];
+int fAlaa = 1;
+
 //Initialize the dynamic allocator of kernel heap with the given start address, size & limit
 //All pages in the given range should be allocated
 //Remember: call the initialize_dynamic_allocator(..) to complete the initialization
@@ -37,7 +39,12 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 	hLimit = daLimit;
 	segmentBr = daStart + initSizeToAllocate;
 	//initphysicaltovirtualmap();
-	init_spinlock(&ellolLk, "Kernel lock");
+
+	if(fAlaa == 1){
+		init_spinlock(&ellolLk, "Kernel lock");
+		fAlaa = 0;
+	}
+
 	if (initSizeToAllocate > daLimit) {
 		panic("ya bro the Initial size exceeds the given limit");
 	}
