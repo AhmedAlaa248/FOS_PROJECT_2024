@@ -55,6 +55,7 @@ enum
 	SYS_env_set_priority,
 	SYS_enqueue,
 	SYS_dequeue,
+	SYS_queue_init,
 	//=====================================================================
 	NSYSCALLS
 };

@@ -22,6 +22,10 @@ struct semaphore create_semaphore(char *semaphoreName, uint32 value)
 		*temp=s;
 		sem.semdata=temp;
 
+		//struct Env_Queue* queue=&(s.queue);
+		struct Env_Queue* queue=&(sem.semdata->queue);
+		sys_queue_init(queue);
+
 		return sem;
 
 }
@@ -36,7 +40,7 @@ struct semaphore get_semaphore(int32 ownerEnvID, char* semaphoreName)
 
 	void * VA = sget(ownerEnvID, semaphoreName);
 
-	if(VA == NULL) {
+	  if(VA == NULL) {
 		return shared_semaphore;
 	}
 
@@ -51,6 +55,7 @@ void wait_semaphore(struct semaphore sem)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("wait_semaphore is not implemented yet");
 	//Your Code is Here...
+
 	while(xchg(&(sem.semdata->lock), 1) != 0);
 
 		if (sem.semdata->count>0)
@@ -74,6 +79,7 @@ void signal_semaphore(struct semaphore sem)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("signal_semaphore is not implemented yet");
 	//Your Code is Here...
+
 	while(xchg(&(sem.semdata->lock), 1) != 0);
 
 		if(sem.semdata->count==0&&sem.semdata->queue.size>0)//there is blocked process
@@ -87,6 +93,8 @@ void signal_semaphore(struct semaphore sem)
 		}
 
 		sem.semdata->lock=0;
+
+
 }
 
 int semaphore_count(struct semaphore sem)

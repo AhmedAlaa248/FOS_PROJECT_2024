@@ -335,4 +335,9 @@ void sys_dequeue(struct Env_Queue* queue)
 	 syscall(SYS_dequeue,(uint32)queue,0,0,0,0);
 	 return ;
 }
+void sys_queue_init(struct Env_Queue* queue)
+{
+	 syscall(SYS_queue_init,(uint32)queue,0,0,0,0);
+	 return ;
+}
 
