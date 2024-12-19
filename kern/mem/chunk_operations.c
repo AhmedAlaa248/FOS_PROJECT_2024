@@ -232,6 +232,10 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 			 		unmap_frame(e->env_page_directory,WSE->virtual_address);
 			 		LIST_REMOVE(&(e->page_WS_list), WSE);
 			 		kfree(WSE);
+			 		if(e->page_WS_list.size>0){
+			 				fifoordertop(&e->page_WS_list);
+			 				e->page_last_WS_element = NULL;
+			 		}
 
 			 	}
 		}

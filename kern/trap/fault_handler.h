@@ -70,5 +70,5 @@ void __page_fault_handler_with_buffering(struct Env * curenv, uint32 fault_va);
 void dyn_alloc_local_scope_method(struct Env * curenv, uint32 fault_va);
 void page_fault_handler(struct Env * curenv, uint32 fault_va);
 void table_fault_handler(struct Env * curenv, uint32 fault_va);
-
+void fifoordertop(struct WS_List* page_WS_list);
 #endif /* KERN_FAULT_HANDLER_H_ */

@@ -62,7 +62,7 @@ struct WorkingSetElement {
 	uint8 empty;
 	//2012
 	unsigned int time_stamp ;
-
+	unsigned int time_stampp ;
 	//2021
 	unsigned int sweeps_counter;
 	//2020

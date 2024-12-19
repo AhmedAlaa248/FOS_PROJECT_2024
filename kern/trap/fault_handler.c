@@ -51,6 +51,56 @@ uint8 isBufferingEnabled(){  return _EnableBuffering ; }
 void setModifiedBufferLength(uint32 length) { _ModifiedBufferLength = length;}
 uint32 getModifiedBufferLength() { return _ModifiedBufferLength;}
 
+void fifoordertop(struct WS_List* page_WS_list) {
+    if (page_WS_list == NULL) {
+    	if(LIST_FIRST(page_WS_list) == NULL){
+    		// a7tyaty
+        return;
+    	}
+    	return;
+    }
+
+    struct WorkingSetElement* elcurr = LIST_FIRST(page_WS_list);
+    struct WorkingSetElement* timesort = NULL;
+
+    while (elcurr != NULL) {
+        struct WorkingSetElement* nxt = LIST_NEXT(elcurr);
+        struct WorkingSetElement* inrtion = NULL;
+
+        if (timesort == NULL) {
+        	timesort = elcurr;
+        	elcurr->prev_next_info.le_next = NULL;
+        	elcurr->prev_next_info.le_prev = NULL;
+        }
+        else {
+
+            struct WorkingSetElement* srt_iter = timesort;
+            while (srt_iter != NULL && srt_iter->time_stampp <= elcurr->time_stampp) {
+            	inrtion = srt_iter;
+            	srt_iter = LIST_NEXT(srt_iter);
+            }
+            if (inrtion == NULL) {
+            	elcurr->prev_next_info.le_next = timesort;
+            	elcurr->prev_next_info.le_prev = NULL;
+                timesort->prev_next_info.le_prev = elcurr;
+                timesort = elcurr;
+            }
+            else {
+            	elcurr->prev_next_info.le_next = inrtion->prev_next_info.le_next;
+                if (inrtion->prev_next_info.le_next != NULL) {
+                	inrtion->prev_next_info.le_next->prev_next_info.le_prev = elcurr;
+                }
+                inrtion->prev_next_info.le_next = elcurr;
+                elcurr->prev_next_info.le_prev = inrtion;
+            }
+        }
+
+        elcurr = nxt;
+    }
+    page_WS_list->lh_first = timesort;
+
+}
+
 //===============================
 // FAULT HANDLERS
 //===============================
@@ -262,6 +312,7 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 			if(LIST_SIZE(&faulted_env->page_WS_list)<faulted_env->page_WS_max_size)
 										faulted_env->page_last_WS_element=NULL;
 									else {
+										fifoordertop(&faulted_env->page_WS_list);
 										faulted_env->page_last_WS_element=LIST_FIRST(&faulted_env->page_WS_list);
 									}
 
@@ -364,13 +415,11 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 //				      cprintf("3rft a3dy \n");
 
 
-
-
 //				        env_page_ws_invalidate(faulted_env, vic->virtual_address);
 
 				struct WorkingSetElement *ele = env_page_ws_list_create_element(faulted_env, fault_va);
 				ele->sweeps_counter = 0;
-				ele->virtual_address = fault_va;
+//				ele->virtual_address = fault_va;
 
 				if (inserthead == 1) {
 					LIST_INSERT_HEAD(&(faulted_env->page_WS_list), ele);

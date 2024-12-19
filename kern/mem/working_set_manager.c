@@ -13,7 +13,7 @@
 ///============================================================================================
 /// Dealing with environment working set
 #if USE_KHEAP
-
+unsigned int prtt=1;
 inline struct WorkingSetElement* env_page_ws_list_create_element(struct Env* e, uint32 virtual_address)
 {
 	//TODO: [PROJECT'24.MS2 - #07] [2] FAULT HANDLER I - Create a new WS element
@@ -25,6 +25,8 @@ inline struct WorkingSetElement* env_page_ws_list_create_element(struct Env* e, 
 	struct WorkingSetElement* ele = (struct WorkingSetElement*)kmalloc(sizeOfSet);
 	if (!ele)
 			panic("Can't Create Object from WorkingSetElement using kmalloc() function");
+		ele->time_stampp = prtt;
+		prtt++;
 		ele->virtual_address = ROUNDDOWN(virtual_address, PAGE_SIZE);
 		uint32* ptr_page_table = NULL;
 		get_frame_info(e->env_page_directory, ele->virtual_address, &ptr_page_table)->element = ele;
