@@ -44,7 +44,7 @@ int numOfKheapVACalls ;
 uint32 hStart;
 uint32 segmentBr;
 uint32 hLimit;
-
+struct spinlock ellolLk;
 
 
 

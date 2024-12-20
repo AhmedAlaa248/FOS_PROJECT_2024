@@ -10,6 +10,8 @@ struct AllocationInfo {
 };
 uint32 physical_to_virtual_map[65536];
 struct AllocationInfo allocations[MAX_SHEFO];
+int fAlaa = 1;
+
 //Initialize the dynamic allocator of kernel heap with the given start address, size & limit
 //All pages in the given range should be allocated
 //Remember: call the initialize_dynamic_allocator(..) to complete the initialization
@@ -37,6 +39,12 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 	hLimit = daLimit;
 	segmentBr = daStart + initSizeToAllocate;
 	//initphysicaltovirtualmap();
+
+	if(fAlaa == 1){
+		init_spinlock(&ellolLk, "Kernel lock");
+		fAlaa = 0;
+	}
+
 	if (initSizeToAllocate > daLimit) {
 		panic("ya bro the Initial size exceeds the given limit");
 	}
@@ -139,11 +147,16 @@ void* kmalloc(unsigned int size)
 	// use "isKHeapPlacementStrategyFIRSTFIT() ..." functions to check the current strategy
 	// Return NULL for zero allocation requests
 
+	acquire_spinlock(&ellolLk);
 	if (size == 0)
+	{
+		release_spinlock(&ellolLk);
 		return NULL;
+	}
 
 	if (size <= DYN_ALLOC_MAX_BLOCK_SIZE){
 //		cprintf("keda nta 8alat \n");
+		release_spinlock(&ellolLk);
 		return alloc_block_FF(size);
 	}
 
@@ -172,6 +185,7 @@ void* kmalloc(unsigned int size)
 
 	if (contiguous_pages < numPages) {
 	//cprintf("Error: Not enough contiguous space found for %d pages\n", numPages);
+		release_spinlock(&ellolLk);
 		return NULL;
 	}
 
@@ -181,11 +195,13 @@ void* kmalloc(unsigned int size)
 
 		if (allocate_frame(&new_frame) != 0) {
 			cprintf("Error: Frame allocation failed at address %p\n", (void*)i);
+			release_spinlock(&ellolLk);
 			return NULL;
 		}
 
 		if (map_frame(ptr_page_directory, new_frame, i, PERM_WRITEABLE) != 0) {
 			cprintf("Error: Frame mapping failed at address %p\n", (void*)i);
+			release_spinlock(&ellolLk);
 			return NULL;
 		}
 //		cprintf("           Mapped frame at virtual address %p to physical frame %p\n", (void*)i, (void*)to_physical_address(new_frame));
@@ -200,7 +216,7 @@ void* kmalloc(unsigned int size)
 		allocations[allocation_co].num_pages = numPages;
 		allocation_co++;
 	}
-
+	release_spinlock(&ellolLk);
 	return start_address;
 }
 
@@ -212,10 +228,12 @@ void kfree(void* virtual_address)
 	//you need to get the size of the given allocation using its address
 	//refer to the project presentation and documentation for details
 
+	acquire_spinlock(&ellolLk);
 	if ((uint32)virtual_address >= KERNEL_HEAP_START
 			&& (uint32)virtual_address < hLimit) {
 
 		free_block(virtual_address);
+		release_spinlock(&ellolLk);
 		return;
 	}else if ((uint32)virtual_address >= hLimit + PAGE_SIZE
 			&& (uint32)virtual_address < KERNEL_HEAP_MAX)
@@ -250,6 +268,7 @@ void kfree(void* virtual_address)
 		allocations[index].start_address = NULL;
 		allocations[index].num_pages = 0;
 	}
+	release_spinlock(&ellolLk);
 
 }
 

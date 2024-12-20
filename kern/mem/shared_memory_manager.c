@@ -69,7 +69,7 @@ inline struct FrameInfo** create_frames_storage(int numOfFrames)
 	//panic("create_frames_storage is not implemented yet");
 	//Your Code is Here...
 
-	uint32 size = numOfFrames * sizeof(struct FrameInfo*);
+	unsigned int size = numOfFrames * sizeof(struct FrameInfo*);
 
 	struct FrameInfo** frames_storage = (struct FrameInfo**) kmalloc(size);
 
@@ -95,8 +95,8 @@ struct Share* create_share(int32 ownerID, char* shareName, uint32 size, uint8 is
 	//panic("create_share is not implemented yet");
 	//Your Code is Here...
 
-	uint32 structSize = sizeof(struct Share);
-	structSize = ROUNDUP(structSize,PAGE_SIZE);
+	unsigned int structSize = sizeof(struct Share);
+//	structSize = ROUNDUP(structSize,PAGE_SIZE);
 
 	struct Share * share_obj = (struct Share*) kmalloc(structSize);
 
@@ -114,7 +114,7 @@ struct Share* create_share(int32 ownerID, char* shareName, uint32 size, uint8 is
 	share_obj->framesStorage = create_frames_storage(numOfFrames);
 
 	if (share_obj->framesStorage == NULL) {
-		kfree((uint32*)share_obj);
+		kfree((void*)share_obj);
 		return NULL;
 	}
 
@@ -163,27 +163,39 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 	int numOfFrames =ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
 	uint32* ptr_page_table;
 
-	if(get_share(ownerID,shareName) != NULL) return E_SHARED_MEM_EXISTS;
+	if(get_share(ownerID,shareName) != NULL)
+	{
 
+		return E_SHARED_MEM_EXISTS;
+	}
+		acquire_spinlock(&AllShares.shareslock);
 	struct Share* sharedObject = create_share(ownerID,shareName,size,isWritable);
 
 	uint32 pcount=0;
 	size = ROUNDUP(size,PAGE_SIZE);
 	for (uint32 i = (uint32)virtual_address ;i < (uint32)virtual_address + size ; i+=PAGE_SIZE ){
 		struct FrameInfo * newframe;
-		if(allocate_frame(&newframe) != 0)	return E_NO_SHARE;
+		if(allocate_frame(&newframe) != 0)
+		{
+			release_spinlock(&AllShares.shareslock);
+			return E_NO_SHARE;
+		}
 
 		if(map_frame(myenv->env_page_directory, newframe, i, PERM_MARKED|PERM_USER|PERM_WRITEABLE) != 0)
+		{
+
+			unmap_frame(myenv->env_page_directory,i);
+			release_spinlock(&AllShares.shareslock);
 			return E_NO_SHARE;
+		}
 
 		sharedObject->framesStorage[pcount] = newframe;
 		pcount++;
 	}
 
-	acquire_spinlock(&AllShares.shareslock);
+
 		LIST_INSERT_TAIL(&AllShares.shares_list,sharedObject);
 	release_spinlock(&AllShares.shareslock);
-
 	return sharedObject->ID;
 }
 
@@ -197,11 +209,15 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("getSharedObject is not implemented yet");
 	//Your Code is Here...
-	struct Env* myenv = get_cpu_proc(); //The calling environment
 
+	struct Env* myenv = get_cpu_proc(); //The calling environment
+	acquire_spinlock(&AllShares.shareslock);
 	struct Share * current_obj = get_share(ownerID, shareName);
 
-	if(current_obj == NULL)	return E_SHARED_MEM_NOT_EXISTS;
+	if(current_obj == NULL){
+		release_spinlock(&AllShares.shareslock);
+		return E_SHARED_MEM_NOT_EXISTS;
+	}
 
 	int perm = (current_obj->isWritable)? (PERM_MARKED|PERM_USER|PERM_WRITEABLE) : (PERM_MARKED|PERM_USER);
 
@@ -213,13 +229,17 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 		//Won't we update frameInfo refrences ?
 		int ret = map_frame(myenv->env_page_directory, current_obj->framesStorage[i], (uint32)virtual_address, perm);
 
-		if (ret != 0) cprintf("Error: Failed to map frame %d to virtual address 0x%x\n", i,(uint32)virtual_address);
+		if (ret != 0){
+			release_spinlock(&AllShares.shareslock);
+			cprintf("Error: Failed to map frame %d to virtual address 0x%x\n", i,(uint32)virtual_address);
+		}
+
 
 		virtual_address += PAGE_SIZE;
 	}
 
 	current_obj->references ++;
-
+	release_spinlock(&AllShares.shareslock);
 	return current_obj->ID;
 
 }
@@ -237,7 +257,7 @@ void free_share(struct Share* ptrShare)
 {
 	//TODO: [PROJECT'24.MS2 - BONUS#4] [4] SHARED MEMORY [KERNEL SIDE] - free_share()
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	//panic("free_share is not implemented yet");
+	panic("free_share is not implemented yet");
 	//Your Code is Here...
 	struct Share * checkshare;
 	LIST_FOREACH(checkshare, &(AllShares.shares_list)){

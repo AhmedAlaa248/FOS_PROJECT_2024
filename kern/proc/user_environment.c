@@ -468,8 +468,23 @@ void env_free(struct Env *e)
 
 	//[PROJECT'24.MS3] BONUS [EXIT ENV] env_free
 	// your code is here, remove the panic and write your code
-	panic("env_free() is not implemented yet...!!");
+//	panic("env_free() is not implemented yet...!!");
 
+	//all pages in the page working set
+	struct WorkingSetElement * curr =NULL;
+	 curr = LIST_FIRST(&e->page_WS_list);
+	 while (curr != NULL) {
+		 env_page_ws_invalidate(e,curr->virtual_address);
+	     curr = LIST_NEXT(curr);
+	 }
+	 //working set itself
+	LIST_INIT(&(e->page_WS_list));
+
+	//all page tables in the entire user virtual memory
+//	pt_clear_page_table_entry(e->env_page_directory);
+	//directory table
+
+	//user kernel stack
 
 	// [9] remove this program from the page file
 	/*(ALREADY DONE for you)*/
