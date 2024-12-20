@@ -168,7 +168,7 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 
 		return E_SHARED_MEM_EXISTS;
 	}
-		acquire_spinlock(&AllShares.shareslock);
+	acquire_spinlock(&AllShares.shareslock);
 	struct Share* sharedObject = create_share(ownerID,shareName,size,isWritable);
 
 	uint32 pcount=0;
@@ -211,11 +211,10 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 	//Your Code is Here...
 
 	struct Env* myenv = get_cpu_proc(); //The calling environment
-	acquire_spinlock(&AllShares.shareslock);
+
 	struct Share * current_obj = get_share(ownerID, shareName);
 
 	if(current_obj == NULL){
-		release_spinlock(&AllShares.shareslock);
 		return E_SHARED_MEM_NOT_EXISTS;
 	}
 
@@ -230,7 +229,6 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 		int ret = map_frame(myenv->env_page_directory, current_obj->framesStorage[i], (uint32)virtual_address, perm);
 
 		if (ret != 0){
-			release_spinlock(&AllShares.shareslock);
 			cprintf("Error: Failed to map frame %d to virtual address 0x%x\n", i,(uint32)virtual_address);
 		}
 
@@ -239,7 +237,6 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 	}
 
 	current_obj->references ++;
-	release_spinlock(&AllShares.shareslock);
 	return current_obj->ID;
 
 }
