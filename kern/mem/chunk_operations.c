@@ -227,15 +227,19 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 			 pf_remove_env_page(e,va);
 			 if (pt_get_page_permissions(e->env_page_directory, va) & PERM_PRESENT)
 			 	{
-			 		uint32 *ptr_page_table;
-			 		struct WorkingSetElement *WSE = get_frame_info(e->env_page_directory, va, &ptr_page_table)->element;
-			 		unmap_frame(e->env_page_directory,WSE->virtual_address);
-			 		LIST_REMOVE(&(e->page_WS_list), WSE);
-			 		kfree(WSE);
+//			 		uint32 *ptr_page_table;
+//			 		struct WorkingSetElement *WSE = get_frame_info(e->env_page_directory, va, &ptr_page_table)->element;
+//			 		unmap_frame(e->env_page_directory,WSE->virtual_address);
+//			 		LIST_REMOVE(&(e->page_WS_list), WSE);
+//			 		kfree(WSE);
+				 	 env_page_ws_invalidate(e,va);
 			 		if(e->page_WS_list.size>0){
 			 				fifoordertop(&e->page_WS_list);
 			 				e->page_last_WS_element = NULL;
+			 		} else if(e->page_WS_list.size==0){
+                        e->page_last_WS_element = NULL;
 			 		}
+
 
 			 	}
 		}

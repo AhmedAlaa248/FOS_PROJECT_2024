@@ -75,7 +75,7 @@ void fifoordertop(struct WS_List* page_WS_list) {
         else {
 
             struct WorkingSetElement* srt_iter = timesort;
-            while (srt_iter != NULL && srt_iter->time_stampp <= elcurr->time_stampp) {
+            while (srt_iter != NULL && srt_iter->shyxosort <= elcurr->shyxosort) {
             	inrtion = srt_iter;
             	srt_iter = LIST_NEXT(srt_iter);
             }

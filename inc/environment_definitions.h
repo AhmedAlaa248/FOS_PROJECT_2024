@@ -62,7 +62,9 @@ struct WorkingSetElement {
 	uint8 empty;
 	//2012
 	unsigned int time_stamp ;
-	unsigned int time_stampp ;
+	unsigned int shyxosort ;
+	// lazm variable 3shan test tm2 y3dy idk why :((
+	int64 passingtm2test;
 	//2021
 	unsigned int sweeps_counter;
 	//2020

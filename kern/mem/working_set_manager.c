@@ -25,7 +25,7 @@ inline struct WorkingSetElement* env_page_ws_list_create_element(struct Env* e, 
 	struct WorkingSetElement* ele = (struct WorkingSetElement*)kmalloc(sizeOfSet);
 	if (!ele)
 			panic("Can't Create Object from WorkingSetElement using kmalloc() function");
-		ele->time_stampp = prtt;
+		ele->shyxosort = prtt;
 		prtt++;
 		ele->virtual_address = ROUNDDOWN(virtual_address, PAGE_SIZE);
 		uint32* ptr_page_table = NULL;
