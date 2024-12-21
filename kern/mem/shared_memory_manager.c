@@ -254,17 +254,22 @@ void free_share(struct Share* ptrShare)
 {
 	//TODO: [PROJECT'24.MS2 - BONUS#4] [4] SHARED MEMORY [KERNEL SIDE] - free_share()
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("free_share is not implemented yet");
+	//panic("free_share is not implemented yet");
 	//Your Code is Here...
-	struct Share * checkshare;
-	LIST_FOREACH(checkshare, &(AllShares.shares_list)){
-			if(checkshare == ptrShare){
-				LIST_REMOVE(&(AllShares.shares_list), ptrShare);
-			}
-		}
-	kfree((int*)ptrShare->framesStorage);
-	kfree((int*)ptrShare);
 
+	if(ptrShare != NULL){
+		acquire_spinlock(&AllShares.shareslock);
+			LIST_REMOVE(&AllShares.shares_list, ptrShare);
+		release_spinlock(&AllShares.shareslock);
+
+		uint32 sizeToLoopOn = ROUNDDOWN(ptrShare->size, PAGE_SIZE) / PAGE_SIZE;
+		for (int i = 0; i <sizeToLoopOn; i++)
+			kfree(ptrShare->framesStorage[i]);
+
+
+		kfree(ptrShare->framesStorage);
+		kfree(ptrShare);
+	}
 
 }
 //========================
@@ -274,7 +279,63 @@ int freeSharedObject(int32 sharedObjectID, void *startVA)
 {
 	//TODO: [PROJECT'24.MS2 - BONUS#4] [4] SHARED MEMORY [KERNEL SIDE] - freeSharedObject()
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("freeSharedObject is not implemented yet");
+	//panic("freeSharedObject is not implemented yet");
 	//Your Code is Here...
+	struct Env* myenv = get_cpu_proc(); //The calling environment
 
+	struct Share * foundedShare;
+	if(!holding_spinlock(&AllShares.shareslock))
+		acquire_spinlock(&AllShares.shareslock);
+
+	LIST_FOREACH(foundedShare, &(AllShares.shares_list)){
+		if(foundedShare->ID == sharedObjectID)
+			break;
+	}
+	release_spinlock(&AllShares.shareslock);
+
+	uint32* ptr_page_tabel;
+
+	if (foundedShare != NULL){
+		uint32 size = ROUNDUP(foundedShare->size, PAGE_SIZE)/ PAGE_SIZE;
+		for (uint32 i = 0 ;i < size ; i++ ){
+			unmap_frame(myenv->env_page_directory, (uint32)startVA);
+
+			get_page_table(myenv->env_page_directory,(uint32)startVA,&ptr_page_tabel);
+
+//			if (i == 0)
+//				for (uint32 j = 0; j < 1024; j++){
+//					cprintf("RETURENED OF get_page_table: %d\n", ptr_page_tabel[j]);
+//				}
+
+			if (ptr_page_tabel != NULL) {
+				bool isEmpty = 1;
+				//Check if The PG table is empty
+				for (uint32 j = 0; j < 1024; j++){
+					// if(ptr_page_tabel[j] != 0)
+					if(ptr_page_tabel[j] & PERM_PRESENT)
+					{
+						isEmpty = 0;
+						break;
+					}
+				}
+
+				if(isEmpty){
+					cprintf("In the empty table\n\n");
+					myenv->env_page_directory[PDX((uint32)startVA)] = 0;
+					kfree(ptr_page_tabel);
+				}
+			}
+
+			startVA += PAGE_SIZE;
+		}
+
+		foundedShare->references--;
+
+		if(foundedShare->references == 0)
+			free_share(foundedShare);
+
+		return 1;
+	}
+
+	return E_NO_SHARE;
 }
