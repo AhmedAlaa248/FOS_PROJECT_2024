@@ -4,6 +4,7 @@ struct heapS {
 	void * returnedVA;
 	uint32 pagesNum;
 	bool marked;
+	uint32 id;
 };
 
 struct heapS pagesArray[NUM_OF_UHEAP_PAGES];
@@ -113,6 +114,10 @@ void* smalloc(char *sharedVarName, uint32 size, uint8 isWritable)
 			if (res == E_SHARED_MEM_EXISTS || res == E_NO_SHARE)
 				return NULL;
 
+			uint32 starti = (uint32) myEnv->hard_limit + PAGE_SIZE;
+			uint32 page_number = ((uint32)startVA - starti) / PAGE_SIZE;
+			pagesArray[page_number].id = res;
+
 			return startVA;
 		}
 	}
@@ -139,7 +144,12 @@ void* sget(int32 ownerEnvID, char *sharedVarName)
 		if(startVA == NULL)	return NULL;
 
 		int ret = sys_getSharedObject(ownerEnvID, sharedVarName, startVA);
-		if(ret != E_SHARED_MEM_NOT_EXISTS) return startVA;
+		if(ret != E_SHARED_MEM_NOT_EXISTS){
+			uint32 starti = (uint32) myEnv->hard_limit + PAGE_SIZE;
+			uint32 page_number = ((uint32)startVA - starti) / PAGE_SIZE;
+			pagesArray[page_number].id = ret;
+			return startVA;
+		}
 	}
 
 
@@ -207,8 +217,28 @@ void sfree(void* virtual_address)
 	//TODO: [PROJECT'24.MS2 - BONUS#4] [4] SHARED MEMORY [USER SIDE] - sfree()
 	// Write your code here, remove the panic and write your code
 	//panic("sfree() is not implemented yet...!!");
-	uint32 ID = (uint32)virtual_address & 0x7FFFFFFF;
-	sys_freeSharedObject(ID, virtual_address);
+
+	uint32 starti = (uint32) myEnv->hard_limit + PAGE_SIZE;
+	uint32 page_number = ((uint32)virtual_address - starti) / PAGE_SIZE;
+	uint32 numtobeunmarked = pagesArray[page_number].pagesNum;
+
+
+	int ret = sys_freeSharedObject(pagesArray[page_number].id, virtual_address);
+
+	if (ret == 1){
+		for(uint32 i = (uint32) virtual_address; i < (uint32) virtual_address + (numtobeunmarked * PAGE_SIZE) ; i+= PAGE_SIZE){
+			page_number = (i -(myEnv->hard_limit+PAGE_SIZE) ) / PAGE_SIZE;
+			pagesArray[page_number].marked = 0;
+		}
+
+		uint32 page_number = ((uint32)virtual_address - starti) / PAGE_SIZE;
+
+		pagesArray[page_number].pagesNum = 0;
+		pagesArray[page_number].returnedVA = NULL;
+		pagesArray[page_number].id = -15356;
+	}
+
+
 
 }
 

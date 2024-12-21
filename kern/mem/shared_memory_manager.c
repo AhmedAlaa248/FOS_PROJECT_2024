@@ -69,7 +69,7 @@ inline struct FrameInfo** create_frames_storage(int numOfFrames)
 	//panic("create_frames_storage is not implemented yet");
 	//Your Code is Here...
 
-	uint32 size = numOfFrames * sizeof(struct FrameInfo*);
+	unsigned int size = numOfFrames * sizeof(struct FrameInfo*);
 
 	struct FrameInfo** frames_storage = (struct FrameInfo**) kmalloc(size);
 
@@ -95,8 +95,7 @@ struct Share* create_share(int32 ownerID, char* shareName, uint32 size, uint8 is
 	//panic("create_share is not implemented yet");
 	//Your Code is Here...
 
-	uint32 structSize = sizeof(struct Share);
-	structSize = ROUNDUP(structSize,PAGE_SIZE);
+	unsigned int structSize = sizeof(struct Share);
 
 	struct Share * share_obj = (struct Share*) kmalloc(structSize);
 
@@ -114,7 +113,7 @@ struct Share* create_share(int32 ownerID, char* shareName, uint32 size, uint8 is
 	share_obj->framesStorage = create_frames_storage(numOfFrames);
 
 	if (share_obj->framesStorage == NULL) {
-		kfree((uint32*)share_obj);
+		kfree((void*)share_obj);
 		return NULL;
 	}
 
@@ -136,15 +135,15 @@ struct Share* get_share(int32 ownerID, char* name)
 	//Your Code is Here...
 
 	struct Share * findshare;
-	//acquire_spinlock(&AllShares.shareslock);
+	acquire_spinlock(&AllShares.shareslock);
 	LIST_FOREACH(findshare, &(AllShares.shares_list)){
 		if(findshare->ownerID == ownerID
 		&& strcmp(findshare->name, name) == 0){
-		//	release_spinlock(&AllShares.shareslock);
+			release_spinlock(&AllShares.shareslock);
 			return findshare;
 		}
 	}
-	//release_spinlock(&AllShares.shareslock);
+	release_spinlock(&AllShares.shareslock);
 	return NULL;
 }
 
@@ -157,18 +156,15 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
     //COMMENT THE FOLLOWING LINE BEFORE START CODING
     //panic("createSharedObject is not implemented yet");
     //Your Code is Here...
-	acquire_spinlock(&AllShares.shareslock);
+
 	struct Env* myenv = get_cpu_proc(); //The calling environment
 
 	int numOfFrames =ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE;
 	uint32* ptr_page_table;
 
-	if(get_share(ownerID,shareName) != NULL)
-	{
-		release_spinlock(&AllShares.shareslock);
-		return E_SHARED_MEM_EXISTS;
-	}
+	if(get_share(ownerID,shareName) != NULL)	return E_SHARED_MEM_EXISTS;
 
+	acquire_spinlock(&AllShares.shareslock);
 	struct Share* sharedObject = create_share(ownerID,shareName,size,isWritable);
 
 	uint32 pcount=0;
@@ -183,6 +179,8 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 
 		if(map_frame(myenv->env_page_directory, newframe, i, PERM_MARKED|PERM_USER|PERM_WRITEABLE) != 0)
 		{
+
+			unmap_frame(myenv->env_page_directory,i);
 			release_spinlock(&AllShares.shareslock);
 			return E_NO_SHARE;
 		}
@@ -191,9 +189,9 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 		pcount++;
 	}
 
-	//acquire_spinlock(&AllShares.shareslock);
-		LIST_INSERT_TAIL(&AllShares.shares_list,sharedObject);
-	//release_spinlock(&AllShares.shareslock);
+
+	LIST_INSERT_TAIL(&AllShares.shares_list,sharedObject);
+
 	release_spinlock(&AllShares.shareslock);
 	return sharedObject->ID;
 }
@@ -210,11 +208,10 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 	//Your Code is Here...
 
 	struct Env* myenv = get_cpu_proc(); //The calling environment
-	acquire_spinlock(&AllShares.shareslock);
+
 	struct Share * current_obj = get_share(ownerID, shareName);
 
 	if(current_obj == NULL){
-		release_spinlock(&AllShares.shareslock);
 		return E_SHARED_MEM_NOT_EXISTS;
 	}
 
@@ -228,17 +225,18 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 		//Won't we update frameInfo refrences ?
 		int ret = map_frame(myenv->env_page_directory, current_obj->framesStorage[i], (uint32)virtual_address, perm);
 
-		if (ret != 0) cprintf("Error: Failed to map frame %d to virtual address 0x%x\n", i,(uint32)virtual_address);
+		if (ret != 0){
+			cprintf("Error: Failed to map frame %d to virtual address 0x%x\n", i,(uint32)virtual_address);
+		}
+
 
 		virtual_address += PAGE_SIZE;
 	}
 
 	current_obj->references ++;
-	release_spinlock(&AllShares.shareslock);
 	return current_obj->ID;
 
 }
-
 //==================================================================================//
 //============================== BONUS FUNCTIONS ===================================//
 //==================================================================================//
@@ -254,15 +252,20 @@ void free_share(struct Share* ptrShare)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("free_share is not implemented yet");
 	//Your Code is Here...
-	struct Share * checkshare;
-	LIST_FOREACH(checkshare, &(AllShares.shares_list)){
-			if(checkshare == ptrShare){
-				LIST_REMOVE(&(AllShares.shares_list), ptrShare);
-			}
-		}
-	kfree((int*)ptrShare->framesStorage);
-	kfree((int*)ptrShare);
 
+	if(ptrShare != NULL){
+		acquire_spinlock(&AllShares.shareslock);
+			LIST_REMOVE(&AllShares.shares_list, ptrShare);
+		release_spinlock(&AllShares.shareslock);
+
+		uint32 sizeToLoopOn = ROUNDDOWN(ptrShare->size, PAGE_SIZE) / PAGE_SIZE;
+		for (int i = 0; i <sizeToLoopOn; i++)
+			kfree(ptrShare->framesStorage[i]);
+
+
+		kfree(ptrShare->framesStorage);
+		kfree(ptrShare);
+	}
 
 }
 //========================
@@ -272,7 +275,63 @@ int freeSharedObject(int32 sharedObjectID, void *startVA)
 {
 	//TODO: [PROJECT'24.MS2 - BONUS#4] [4] SHARED MEMORY [KERNEL SIDE] - freeSharedObject()
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("freeSharedObject is not implemented yet");
+	//panic("freeSharedObject is not implemented yet");
 	//Your Code is Here...
+	struct Env* myenv = get_cpu_proc(); //The calling environment
 
+	struct Share * foundedShare;
+	if(!holding_spinlock(&AllShares.shareslock))
+		acquire_spinlock(&AllShares.shareslock);
+
+	LIST_FOREACH(foundedShare, &(AllShares.shares_list)){
+		if(foundedShare->ID == sharedObjectID)
+			break;
+	}
+	release_spinlock(&AllShares.shareslock);
+
+	uint32* ptr_page_tabel;
+
+	if (foundedShare != NULL){
+		uint32 size = ROUNDUP(foundedShare->size, PAGE_SIZE)/ PAGE_SIZE;
+		for (uint32 i = 0 ;i < size ; i++ ){
+			unmap_frame(myenv->env_page_directory, (uint32)startVA);
+
+			get_page_table(myenv->env_page_directory,(uint32)startVA,&ptr_page_tabel);
+
+//			if (i == 0)
+//				for (uint32 j = 0; j < 1024; j++){
+//					cprintf("RETURENED OF get_page_table: %d\n", ptr_page_tabel[j]);
+//				}
+
+			if (ptr_page_tabel != NULL) {
+				bool isEmpty = 1;
+				//Check if The PG table is empty
+				for (uint32 j = 0; j < 1024; j++){
+					// if(ptr_page_tabel[j] != 0)
+					if(ptr_page_tabel[j] & PERM_PRESENT)
+					{
+						isEmpty = 0;
+						break;
+					}
+				}
+
+				if(isEmpty){
+					cprintf("In the empty table\n\n");
+					myenv->env_page_directory[PDX((uint32)startVA)] = 0;
+					kfree(ptr_page_tabel);
+				}
+			}
+
+			startVA += PAGE_SIZE;
+		}
+
+		foundedShare->references--;
+
+		if(foundedShare->references == 0)
+			free_share(foundedShare);
+
+		return 1;
+	}
+
+	return E_NO_SHARE;
 }
