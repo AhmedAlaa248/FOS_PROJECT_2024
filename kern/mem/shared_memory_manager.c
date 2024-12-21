@@ -324,7 +324,7 @@ int freeSharedObject(int32 sharedObjectID, void *startVA)
 				}
 
 				if(isEmpty){
-					cprintf("In the empty table\n\n");
+					//cprintf("In the empty table\n\n");
 					myenv->env_page_directory[PDX((uint32)startVA)] = 0;
 					kfree(ptr_page_tabel);
 				}
@@ -333,10 +333,12 @@ int freeSharedObject(int32 sharedObjectID, void *startVA)
 			startVA += PAGE_SIZE;
 		}
 
-		foundedShare->references--;
 
-		if(foundedShare->references == 0)
+
+		if(foundedShare->references == 1)
 			free_share(foundedShare);
+
+		foundedShare->references--;
 
 		return 1;
 	}

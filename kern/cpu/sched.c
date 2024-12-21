@@ -407,14 +407,13 @@ void clock_interrupt_handler(struct Trapframe* tf)
 
 				if (now_ticks > (int64) StarvationThreshold && curr->priority != 0){
 /*
- * 					cprintf("??????????\n");
+					cprintf("??????????\n");
 					cprintf("now_ticks: %d\n", now_ticks);
 					cprintf("curr_env: %d\n", curr->env_id);
 					cprintf("Priority = %d\n", curr->priority);
 					cprintf("??????????\n");
- *
- */
 
+*/
 					curr->priority--;
 					acquire_spinlock(&ProcessQueues.qlock);
 						remove_from_queue(&ProcessQueues.env_ready_queues[i],curr);

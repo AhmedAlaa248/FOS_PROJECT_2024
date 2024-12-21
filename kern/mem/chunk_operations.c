@@ -144,35 +144,35 @@ void* sys_sbrk(int numOfPages)
 	/*====================================*/
 
 	struct Env* env = get_cpu_proc(); //the current running Environment to adjust its break limit
+	bool pagesless0=1;
+	if(pagesless0==1){
 		if(numOfPages<0)
 		{
-		  panic("can't Allocate no. of page with negative value");
+		  panic("can't Allo no. of page with negative value");
+		  // hena test el negative hy3dy
 		  return (void*)-1;
 		}
+	}
+	if(numOfPages==0){
+	  return (void*)env->seg_break;
+	}
 
-		if(numOfPages==0)
-		  return (void*)env->seg_break;
+	// kan fe hena error
+	uint32 size =numOfPages*PAGE_SIZE;
 
+	if(env->seg_break+numOfPages*PAGE_SIZE>env->hard_limit)
+	{
 
+	return (void*)-1;
+	}
 
-		uint32 size =numOfPages*PAGE_SIZE;
+	allocate_user_mem(env,env->seg_break,size);
 
-		if(env->seg_break+size>env->hard_limit)
-		{
+	void *oldBreak=(void*)env->seg_break;
 
-		return (void*)-1;
-		}
+	env->seg_break=env->seg_break+size;
 
-		allocate_user_mem(env,env->seg_break,size);
-
-
-		void *oldBreak=(void*)env->seg_break;
-
-
-
-		env->seg_break=env->seg_break+size;
-
-		return oldBreak;
+	return oldBreak;
 
 }
 
