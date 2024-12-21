@@ -283,13 +283,17 @@ int freeSharedObject(int32 sharedObjectID, void *startVA)
 	//Your Code is Here...
 	struct Env* myenv = get_cpu_proc(); //The calling environment
 
-	struct Share * foundedShare;
+	struct Share * foundedShare = NULL;
+	struct Share * toIterate;
 	if(!holding_spinlock(&AllShares.shareslock))
 		acquire_spinlock(&AllShares.shareslock);
 
-	LIST_FOREACH(foundedShare, &(AllShares.shares_list)){
-		if(foundedShare->ID == sharedObjectID)
+	LIST_FOREACH(toIterate, &(AllShares.shares_list)){
+		if(toIterate->ID == sharedObjectID){
+			foundedShare = toIterate;
 			break;
+		}
+
 	}
 	release_spinlock(&AllShares.shareslock);
 

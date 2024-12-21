@@ -463,28 +463,39 @@ void env_start(void)
 void env_free(struct Env *e)
 {
 	/*REMOVE THIS LINE BEFORE START CODING*/
-	return;
+	//return;
 	/**************************************/
 
 	//[PROJECT'24.MS3] BONUS [EXIT ENV] env_free
 	// your code is here, remove the panic and write your code
-//	panic("env_free() is not implemented yet...!!");
+	//panic("env_free() is not implemented yet...!!");
 
-	//all pages in the page working set
-	struct WorkingSetElement * curr =NULL;
-	 curr = LIST_FIRST(&e->page_WS_list);
-	 while (curr != NULL) {
-		 env_page_ws_invalidate(e,curr->virtual_address);
-	     curr = LIST_NEXT(curr);
-	 }
-	 //working set itself
-	LIST_INIT(&(e->page_WS_list));
+	// [1] remove all pages in the page working set
+	struct WorkingSetElement * currWS = NULL;
 
-	//all page tables in the entire user virtual memory
-//	pt_clear_page_table_entry(e->env_page_directory);
-	//directory table
+	LIST_FOREACH(currWS, &e->page_WS_list){
+		env_page_ws_invalidate(e,currWS->virtual_address);
 
-	//user kernel stack
+		// [2] remove working set itself
+		kfree(currWS);
+	}
+
+	// [3] All page tables in the entire user VM
+	for (uint32 i = 0, va =0; i < 1024; i++, va+= PAGE_SIZE){
+		uint32 *page_table = NULL;
+		get_page_table(e->env_page_directory, va,&page_table);
+
+		if(page_table != NULL){
+			e->env_page_directory[PDX(va)] = 0;
+			kfree(page_table);
+		}
+	}
+
+	// [4] remove directory table
+	kfree(e->env_page_directory);
+
+	// [5] remove kernel stack
+	kfree(e->kstack);
 
 	// [9] remove this program from the page file
 	/*(ALREADY DONE for you)*/
